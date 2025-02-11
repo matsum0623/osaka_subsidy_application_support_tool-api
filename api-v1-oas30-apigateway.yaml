@@ -1,0 +1,1129 @@
+openapi: "3.0.1"
+info:
+  title: "arinko_api"
+  version: "1.0"
+
+paths:
+  /users:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /user:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserPostLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /user/{user_id}:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserUserIdGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "GET"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    put:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserUserIdPutLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    delete:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserUserIdDeleteLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,PUT,GET,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /after_school:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolPostLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /after_school/{school_id}:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolSchoolIdGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    put:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolSchoolIdPutLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,PUT,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /after_school/{school_id}/instructors:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolInstructorGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolInstructorPostLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    put:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolInstructorPutLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    delete:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AfterSchoolInstructorDeleteLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,PUT,GET,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /after_school/{school_id}/holidays:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HolidaysGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    put:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HolidaysPutLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,PUT,GET,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /monthly:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MonthlyGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /monthly/daily:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MonthlyDailyGetLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Empty"
+        required: false
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MonthlyDailyPostLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /monthly/download:
+    get:
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - IPFilter: []
+      x-amazon-apigateway-request-validator: "Validating query string parameters and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MonthlyDownloadLambda.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+components:
+  schemas:
+    Empty:
+      type: object
+
+x-amazon-apigateway-gateway-responses:
+  INTEGRATION_FAILURE:
+    statusCode: 504
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "504000", "message": $context.error.messageString}}'
+  ACCESS_DENIED:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  INTEGRATION_TIMEOUT:
+    statusCode: 504
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "504000", "message": $context.error.messageString}}'
+  AUTHORIZER_CONFIGURATION_ERROR:
+    statusCode: 500
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "500000", "message": $context.error.messageString}}'
+  REQUEST_TOO_LARGE:
+    statusCode: 413
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "413000", "message": $context.error.messageString}}'
+  BAD_REQUEST_BODY:
+    statusCode: 400
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "400000", "message": "invalid parameter"}}'
+  INVALID_SIGNATURE:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  UNSUPPORTED_MEDIA_TYPE:
+    statusCode: 415
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "415000", "message": $context.error.messageString}}'
+  DEFAULT_4XX:
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "400000", "message": $context.error.messageString}}'
+  THROTTLED:
+    statusCode: 429
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "429000", "message": $context.error.messageString}}'
+  INVALID_API_KEY:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  QUOTA_EXCEEDED:
+    statusCode: 429
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "429000", "message": $context.error.messageString}}'
+  BAD_REQUEST_PARAMETERS:
+    statusCode: 400
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "400000", "message": "invalid parameter"}}'
+  API_CONFIGURATION_ERROR:
+    statusCode: 500
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "500000", "message": $context.error.messageString}}'
+  DEFAULT_5XX:
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "500000", "message": $context.error.messageString}}'
+  EXPIRED_TOKEN:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  RESOURCE_NOT_FOUND:
+    statusCode: 404
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "404000", "message": $context.error.messageString}}'
+  AUTHORIZER_FAILURE:
+    statusCode: 500
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "500000", "message": $context.error.messageString}}'
+  WAF_FILTERED:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  MISSING_AUTHENTICATION_TOKEN:
+    statusCode: 403
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "403000", "message": $context.error.messageString}}'
+  UNAUTHORIZED:
+    statusCode: 401
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"result": null, "error": {"code": "401000", "message": $context.error.messageString}}'
+x-amazon-apigateway-request-validators:
+  Validating the body, query string parameters, and headers:
+    validateRequestParameters: true
+    validateRequestBody: true
+  Validating query string parameters and headers:
+    validateRequestParameters: true
+    validateRequestBody: false

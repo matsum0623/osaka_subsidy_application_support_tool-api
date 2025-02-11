@@ -1,0 +1,444 @@
+# template.yaml
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Handler: index.handler
+    Runtime: nodejs18.x
+    Timeout: 30
+    MemorySize: 256
+    Layers:
+      - !Ref MyModuleLayer
+      - !Ref NodeModuleLayer
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_NAME: !Ref DynamoDB
+  Api:
+    Cors:
+      AllowOrigin: "'*'"
+      AllowCredentials: false
+      AllowMethods: "'POST,PUT,DELETE'"
+      AllowHeaders: "'Content-Type,X-CSRF-TOKEN'"
+
+Resources:
+  DynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+
+  UserAdminLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonCognitoPowerUser
+
+  NodeModuleLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - nodejs18.x
+      LayerName: "NodeModuleLayer"
+      ContentUri: layers/npm
+  MyModuleLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - nodejs18.x
+      LayerName: "MyModuleLayer"
+      ContentUri: layers/common_layer
+
+  UsersGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/users/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  UserGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/user/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  UserPostLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/user/post
+      Role: !GetAtt UserAdminLambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: POST
+            RestApiId:
+              Ref: CommonAPI
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref LoginUserPool
+
+  UserUserIdGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/user/user_id/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /user/{user_id}
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  UserUserIdPutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/user/user_id/put
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /user/{user_id}
+            Method: PUT
+            RestApiId:
+              Ref: CommonAPI
+
+  UserUserIdDeleteLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/user/user_id/delete
+      Role: !GetAtt UserAdminLambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /user/{user_id}
+            Method: DELETE
+            RestApiId:
+              Ref: CommonAPI
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref LoginUserPool
+
+  AfterSchoolGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolPostLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/post
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school
+            Method: POST
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolSchoolIdPutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/put
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}
+            Method: PUT
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolSchoolIdGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/get
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolInstructorGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/instructors/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/instructors
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolInstructorPostLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/instructors/post
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/instructors
+            Method: POST
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolInstructorPutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/instructors/put
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/instructors
+            Method: PUT
+            RestApiId:
+              Ref: CommonAPI
+
+  AfterSchoolInstructorDeleteLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/instructors/delete
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/instructors
+            Method: DELETE
+            RestApiId:
+              Ref: CommonAPI
+
+  HolidaysGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/holidays/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/holidays
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  HolidaysPutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/after_school/school_id/holidays/put
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /after_school/{school_id}/holidays
+            Method: PUT
+            RestApiId:
+              Ref: CommonAPI
+
+
+  MonthlyGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  MonthlyDailyGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/daily/get
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly/daily
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  MonthlyDailyPostLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/daily/post
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly/daily
+            Method: POST
+            RestApiId:
+              Ref: CommonAPI
+
+  MonthlyDownloadLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/download
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          FILE_DOWNLOAD_BUCKET_NAME: !Ref FileDownloadBucket
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly/download
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
+  CommonAPI: # API Gateway
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: arinko_api
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Origin, X-Requested-With, Content-Type, Authorization, Accept'"
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: api-v1-oas30-apigateway.yaml
+      OpenApiVersion: 3.0.1
+      StageName: development
+      EndpointConfiguration: REGIONAL
+
+  FileDownloadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: osaka-subsidy-app-download-bucket
+
+  LoginUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-user-pool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        InviteMessageTemplate:
+          EmailMessage: |-
+            大阪市学童補助金支援ツールへようこそ。<br><br>
+            管理者によりユーザ登録を行いました。<br><br>
+            ユーザ名は {username} です。<br>
+            仮パスワードは {####} です。<br><br>
+            初回ログイン時にパスワードを変更してください。<br><br>
+            ※このメールは送信専用です。返信はできません。<br>
+          EmailSubject: "大阪市学童補助金支援ツール 招待メール"
+      AutoVerifiedAttributes:
+        - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: false
+        - Name: name
+          Required: true
+          Mutable: true
+
+  LoginUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${AWS::StackName}-user-pool-client
+      GenerateSecret: false
+      RefreshTokenValidity: 1800
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      UserPoolId:
+        Ref: LoginUserPool
