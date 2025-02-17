@@ -1,6 +1,16 @@
 # template.yaml
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  EnvName:
+    Type: String
+    Default: develop
+    AllowedValues:
+      - develop
+      - staging
+      - production
+    Description: 環境名
+
 Globals:
   Function:
     Handler: index.handler
@@ -72,14 +82,14 @@ Resources:
     Properties:
       CompatibleRuntimes:
         - nodejs18.x
-      LayerName: "NodeModuleLayer"
+      LayerName: !Sub ${EnvName}-NodeModuleLayer
       ContentUri: layers/npm
   MyModuleLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       CompatibleRuntimes:
         - nodejs18.x
-      LayerName: "MyModuleLayer"
+      LayerName: !Sub ${EnvName}-MyModuleLayer
       ContentUri: layers/common_layer
 
   UsersGetLambda:
@@ -313,7 +323,6 @@ Resources:
             RestApiId:
               Ref: CommonAPI
 
-
   MonthlyGetLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -376,7 +385,7 @@ Resources:
   CommonAPI: # API Gateway
     Type: AWS::Serverless::Api
     Properties:
-      Name: arinko_api
+      Name: !Sub ${EnvName}-arinko_api
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'Origin, X-Requested-With, Content-Type, Authorization, Accept'"
@@ -392,12 +401,12 @@ Resources:
   FileDownloadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: osaka-subsidy-app-download-bucket
+      BucketName: !Sub "${EnvName}-osaka-subsidy-app-download-bucket"
 
   LoginUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub ${AWS::StackName}-user-pool
+      UserPoolName: !Sub ${EnvName}-${AWS::StackName}-user-pool
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: true
         InviteMessageTemplate:
@@ -433,7 +442,7 @@ Resources:
   LoginUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub ${AWS::StackName}-user-pool-client
+      ClientName: !Sub ${EnvName}-${AWS::StackName}-user-pool-client
       GenerateSecret: false
       RefreshTokenValidity: 1800
       ExplicitAuthFlows:
