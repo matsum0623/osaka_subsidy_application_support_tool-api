@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - develop
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,4 +17,4 @@ jobs:
       - run: cd layers/npm/nodejs && npm install
       - run: cd ../../../
       - run: sam build --use-container
-      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env production
+      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env develop
