@@ -14,7 +14,17 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-npm-production-${{ hashFiles('**/package-lock.json') }}
+          path: layers/npm/nodejs/node_modules
       - run: cd layers/npm/nodejs && npm install
       - run: cd ../../../
+      - name: Cache SAM build
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-sam-production
+          path: .aws-sam/
       - run: sam build --use-container
       - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env production
