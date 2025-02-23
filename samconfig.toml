@@ -1,0 +1,45 @@
+version = 0.1
+[production.deploy.parameters]
+stack_name = "OsakaSubsidyApplicationSupportTool"
+resolve_s3 = true
+s3_prefix = "OsakaSubsidyApplicationSupportTool"
+region = "ap-northeast-1"
+profile = "sam-cli"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "EnvName=production"
+
+[develop.deploy.parameters]
+stack_name = "OSAST-Develop"
+resolve_s3 = true
+s3_prefix = "OSAST-Develop"
+region = "ap-northeast-1"
+profile = "sam-cli"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "EnvName=develop"
+
+[production_local.deploy.parameters]
+stack_name = "OsakaSubsidyApplicationSupportTool"
+resolve_s3 = true
+s3_prefix = "OsakaSubsidyApplicationSupportTool"
+region = "ap-northeast-1"
+profile = "sam-cli"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "EnvName=production"
+
+[develop_local.deploy.parameters]
+stack_name = "OSAST-Develop"
+resolve_s3 = true
+s3_prefix = "OSAST-Develop"
+region = "ap-northeast-1"
+profile = "sam-cli"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "EnvName=develop"
+
