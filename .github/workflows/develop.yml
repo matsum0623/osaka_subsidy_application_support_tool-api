@@ -21,5 +21,10 @@ jobs:
           path: layers/npm/nodejs/node_modules
       - run: cd layers/npm/nodejs && npm install
       - run: cd ../../../
+      - name: Cache SAM build
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-sam-develop
+          path: .aws-sam/
       - run: sam build --use-container
       - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-env develop
