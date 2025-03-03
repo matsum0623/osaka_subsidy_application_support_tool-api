@@ -7,6 +7,12 @@ exports.handler = async (event, context) => {
     if(!decode_token){
         return response_403
     }
+    // 管理者だけがユーザ一覧を取得できる
+    const request_user_data = await user.get_item(decode_token['cognito:username'])
+    if(!request_user_data.Admin){
+        return response_403
+    }
+
     const users_data = await user.get_all()
     const response = {
         list: []
