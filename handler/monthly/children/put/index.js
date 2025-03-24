@@ -19,13 +19,13 @@ exports.handler = async (event, context) => {
     const daily_item = await daily.get_item(after_school_id, date)
     if(daily_item){
       // 児童数のみ書き換えて登録
-      const open_type = after_school_info.Config.OpenTypes[data.open_type]
+      const open_type = after_school_info.Config.OpenTypes[String(data[date]['open_type'])]
       const open  = post_data.open_type != '9' ? open_type.OpenTime : undefined
       const close = post_data.open_type != '9' ? open_type.CloseTime : undefined
       await daily.put(
         after_school_id,
         date,
-        data[date]['open_typ'],
+        data[date]['open_type'],
         {start: open, end: close},
         data[date]['children'],
         data[date]['disability'],
