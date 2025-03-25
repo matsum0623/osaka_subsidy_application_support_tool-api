@@ -18,8 +18,8 @@ exports.handler = async (event, context) => {
     // 登録があるかどうかチェック
     const daily_item = await daily.get_item(after_school_id, date)
     const open_type = after_school_info.Config.OpenTypes[String(data[date]['open_type'])]
-    const open  = String(data[date]['open_type']) != '9' ? open_type.OpenTime : undefined
-    const close = String(data[date]['open_type']) != '9' ? open_type.CloseTime : undefined
+    const open  = String(data[date]['open_type']) != '9' ? open_type.OpenTime : '6:00'
+    const close = String(data[date]['open_type']) != '9' ? open_type.CloseTime : '22:00'
     if(daily_item && Object.keys(daily_item).length > 0){
       // 児童数のみ書き換えて登録
       await daily.put(
