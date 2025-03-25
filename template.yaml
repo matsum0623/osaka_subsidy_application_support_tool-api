@@ -366,6 +366,20 @@ Resources:
             RestApiId:
               Ref: CommonAPI
 
+  MonthlyChildrenPutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/children/put
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly/children
+            Method: PUT
+            RestApiId:
+              Ref: CommonAPI
+
   MonthlyDownloadLambda:
     Type: AWS::Serverless::Function
     Properties:
