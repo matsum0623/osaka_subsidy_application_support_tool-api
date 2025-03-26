@@ -397,6 +397,23 @@ Resources:
             RestApiId:
               Ref: CommonAPI
 
+  MonthlyDownloadSummaryLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handler/monthly/download/summary
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          FILE_DOWNLOAD_BUCKET_NAME: !Ref FileDownloadBucket
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            Path: /monthly/download/summary
+            Method: GET
+            RestApiId:
+              Ref: CommonAPI
+
   CommonAPI: # API Gateway
     Type: AWS::Serverless::Api
     Properties:
