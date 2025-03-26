@@ -1,3 +1,4 @@
+const { response_ok, response_403 } = require('lambda_response')
 const { daily, instructor } = require('connect_dynamodb')
 
 exports.handler = async (event, context) => {
@@ -55,6 +56,8 @@ exports.handler = async (event, context) => {
       console.log(additionalHours.map(convertIntToTime).join('\t'));
       console.log(workHoursWithinOpeningHours.map(convertIntToTime).join('\t'));
   }
+
+  response_ok({ message: 'success' });
 
 }
 
