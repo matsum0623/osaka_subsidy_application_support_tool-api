@@ -1,5 +1,6 @@
 const { response_ok, response_403 } = require('lambda_response')
 const { daily, instructor } = require('connect_dynamodb')
+const { Auth } = require('Auth')
 
 exports.handler = async (event, context) => {
   const decode_token = Auth.check_id_token(event)
