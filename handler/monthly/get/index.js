@@ -14,7 +14,6 @@ exports.handler = async (event, context) => {
         return response_403
     }
     const ym = !qsp.ym ? today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) : qsp.ym
-    const for_csv_flag = !qsp.for_csv ? true : false
     const after_school_id = qsp.school_id
 
     const daily_dict = {}
@@ -44,23 +43,26 @@ exports.handler = async (event, context) => {
             dt_str,
             dt.getDate().toString() + '日',
             dt.getDay(),
-            dt_str in daily_dict ? daily_dict[dt_str]['OpenType'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['Children'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['Disability'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['MedicalCare'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['OpenInstructor']['Qualification'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['OpenInstructor']['NonQualification'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['CloseInstructor']['Qualification'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['CloseInstructor']['NonQualification'] : "",
-            dt_str in daily_dict ? daily_dict[dt_str]['InstructorCheck'] : "",
+            dt_str in daily_dict ? daily_dict[dt_str]['OpenType'] : "",                                 // 開所タイプ
+            dt_str in daily_dict ? daily_dict[dt_str]['Children'] : "",                                 // 児童数
+            dt_str in daily_dict ? daily_dict[dt_str]['Disability'] : "",                               // 障がい児童数
+            dt_str in daily_dict ? daily_dict[dt_str]['MedicalCare'] : "",                              // 医療的ケア児童数
+            dt_str in daily_dict ? daily_dict[dt_str]['OpenInstructor']['Qualification'] : "",          // 開所時放課後児童支援員数
+            dt_str in daily_dict ? daily_dict[dt_str]['OpenInstructor']['NonQualification'] : "",       // 開所時補助員数
+            dt_str in daily_dict ? daily_dict[dt_str]['CloseInstructor']['Qualification'] : "",         // 閉所時放課後児童支援員数
+            dt_str in daily_dict ? daily_dict[dt_str]['CloseInstructor']['NonQualification'] : "",      // 閉所時補助員数
+            dt_str in daily_dict ? daily_dict[dt_str]['InstructorCheck'] : "",                          // 指導員配置チェック
+            false,                                                                                      // 加配対象職員配置
+            0,                                                                                          // 加配対象時間数
         ]
-        if(for_csv_flag){
-            if(dt_str in daily_dict){
-                ob = daily_dict[dt_str]['Details']['InstructorWorkHours']
-                ob.sort((a, b) => {a.InstructorId > b.InstructorId}).forEach((inst_work_info) => {
-                    daily_list.push(instructors[inst_work_info.InstructorId])
-                })
-            }
+        // 加配退所職員チェック
+        if(dt_str in daily_dict){
+            daily_dict[dt_str].Details.InstructorWorkHours.forEach((ins) => {
+                if(ins.AdditionalCheck){
+                    daily_list[12] = true
+                    daily_list[13] += convertTimeToInt(ins.EndTime) - convertTimeToInt(ins.StartTime)
+                }
+            })
         }
         res_list.push(daily_list)
         dt = new Date(dt.setDate(dt.getDate() + 1));
@@ -90,3 +92,8 @@ exports.handler = async (event, context) => {
         }
     });
 };
+
+function convertTimeToInt(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours + minutes / 60;
+}
