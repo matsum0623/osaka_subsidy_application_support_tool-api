@@ -58,7 +58,7 @@ exports.handler = async (event, context) => {
       console.log(workHoursWithinOpeningHours.map(convertIntToTime).join('\t'));
   }
 
-  response_ok({ message: 'success' });
+  return response_ok({ message: 'success' });
 
 }
 
