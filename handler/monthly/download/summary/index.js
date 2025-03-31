@@ -78,7 +78,7 @@ exports.handler = async (event, context) => {
       base_row += 4;
   }
   const tmp_file_name = `/tmp/Output.xlsx`;
-  book.toFileAsync(tmp_file_name);
+  await book.toFileAsync(tmp_file_name);
 
   const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
   const timestamp = (new Date()).getTime()
