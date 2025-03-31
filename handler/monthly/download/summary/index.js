@@ -67,13 +67,13 @@ exports.handler = async (event, context) => {
 
       sheet.cell(`A${base_row}`).value(workHours.InstructorName);
       totalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index + 1]}${base_row + 1}`).value(convertIntToTime(hours));
+          sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
       })
       additionalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index + 1]}${base_row + 2}`).value(convertIntToTime(hours));
+          sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
       })
       workHoursWithinOpeningHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index + 1]}${base_row + 3}`).value(convertIntToTime(hours));
+          sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
       })
       base_row += 4;
   }
