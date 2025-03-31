@@ -1,6 +1,12 @@
+const fs = require('fs');
+const AWS = require("aws-sdk");
+const s3 = new AWS.S3();
+
 const { response_ok, response_403 } = require('lambda_response')
 const { daily, instructor } = require('connect_dynamodb')
 const { Auth } = require('Auth')
+
+const XlsxPopulate = require('xlsx-populate');
 
 exports.handler = async (event, context) => {
   const decode_token = Auth.check_id_token(event)
@@ -14,7 +20,7 @@ exports.handler = async (event, context) => {
   }
 
   const schoolId = qsp.school_id;
-  const year = qsp.year;
+  const year = parseInt(qsp.year);
   const month = 4;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
@@ -41,6 +47,13 @@ exports.handler = async (event, context) => {
       additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
   }
 
+  const book = await XlsxPopulate.fromBlankAsync();
+  book.sheet(0).name("加配情報");
+  const sheet = book.sheet(0);
+
+  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+  base_row = 1
   for (const workHours of Object.values(additionalInstructors)) {
       const totalHours = [];
       const workHoursWithinOpeningHours = [];
@@ -52,13 +65,43 @@ exports.handler = async (event, context) => {
           additionalHours.push(hours.AdditionalHours);
       }
 
-      console.log(workHours.InstructorName);
-      console.log(totalHours.map(convertIntToTime).join('\t'));
-      console.log(additionalHours.map(convertIntToTime).join('\t'));
-      console.log(workHoursWithinOpeningHours.map(convertIntToTime).join('\t'));
+      sheet.cell(`A${base_row}`).value(workHours.InstructorName);
+      totalHours.forEach((hours, index) => {
+          sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
+      })
+      additionalHours.forEach((hours, index) => {
+          sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
+      })
+      workHoursWithinOpeningHours.forEach((hours, index) => {
+          sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
+      })
+      base_row += 4;
   }
+  const tmp_file_name = `/tmp/Output.xlsx`;
+  await book.toFileAsync(tmp_file_name);
 
-  return response_ok({ message: 'success' });
+  const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
+  const timestamp = (new Date()).getTime()
+  const dir = 'additional_instructor_work_hours';
+  const key = `${dir}/${timestamp}_${random_number}.xlsx`
+  try {
+    await s3.putObject({
+      Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
+      Key: key,
+      Body: fs.createReadStream(tmp_file_name),
+    }).promise();
+
+  } catch (error) {
+    console.log(error)
+  }
+  const signed_url = await s3.getSignedUrl('getObject', {
+    Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
+    Key: key,
+    Expires: 60,
+    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`加配情報_${year}_${timestamp}.xlsx`)}"`,
+  })
+
+  return response_ok({ url: signed_url });
 
 }
 
