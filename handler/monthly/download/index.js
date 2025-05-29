@@ -127,13 +127,18 @@ const output_monthly_report = async (after_school_id, ym) => {
   console.log('start input instructor sheet')
   // 職員一覧記載
   const instructor_sheet = book.sheet("職員一覧")
+  // 年度始まりの日付
+  const start_ymd = parseInt(ym.split('-')[1]) >= 4 ? ym.split('-')[0] + '-04-01' : (parseInt(ym.split('-')[0]) - 1) + '-04-01'
   let row_idx = 2
   all_instructors.forEach((value) => {
-    if(value.RetirementDate < ym + '-01') return
+    if(value.RetirementDate < start_ymd) return
     instructors[value['SK'].split('#')[1]] = value['Name']
     input_cell(instructor_sheet, "B" + row_idx, value['Name'], 'text')
     input_cell(instructor_sheet, "C" + row_idx, value.Qualification ? '放課後児童支援員' : '補助員', 'text')
     input_cell(instructor_sheet, "D" + row_idx, seiki_dict[value.Seiki] + '・' + koyou_dict[value.Koyou], 'text')
+    if (value.RetirementDate){
+      input_cell(instructor_sheet, "E" + row_idx, value.RetirementDate, 'text')
+    }
 
     instructor_types[value.Koyou][value.Qualification ? '1': '2'] += 1
     row_idx++;
