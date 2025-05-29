@@ -217,8 +217,6 @@ const output_monthly_report = async (after_school_id, ym) => {
   input_cell(month_sheet_2, "F22", instructor_types['2']['2'] + instructor_types['3']['2'], 'number')
   input_cell(month_sheet_2, "FJ2", instructor_types['2']['3'] + instructor_types['3']['3'], 'number')
 
-  input_cell(month_sheet_2, "L46", instructor_types['1']['1'] + instructor_types['2']['1'] > 1 ? '２名以上雇用している' : '２名雇用していない', 'text')
-
   console.log('output Excel')
   await book.toFileAsync("/tmp/Output.xlsx")
   console.log('output Excel done')
