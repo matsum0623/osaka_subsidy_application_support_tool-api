@@ -68,6 +68,7 @@ exports.handler = async (event, context) => {
         start: instructor_data[instructor_id]?.StartTime ?? '',
         end: instructor_data[instructor_id]?.EndTime ?? '',
         hours: instructor_data[instructor_id]?.WorkHours ?? '',
+        hire_date: item.HireDate ? item.HireDate : null,
         order: item.Order ? item.Order : 99,
         additional_check: instructor_data[instructor_id]?.AdditionalCheck ?? false,
         retirement_date: item.RetirementDate ? item.RetirementDate : null,

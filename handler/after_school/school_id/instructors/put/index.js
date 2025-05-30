@@ -23,6 +23,7 @@ exports.handler = async (event, context) => {
         post_data.medical_care,
         post_data.seiki,
         post_data.koyou,
+        post_data.hire_date,
         post_data.order,
     )
 

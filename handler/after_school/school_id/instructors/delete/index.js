@@ -29,6 +29,7 @@ exports.handler = async (event, context) => {
         instructor_info.MedicalCare,
         instructor_info.Seiki,
         instructor_info.Koyou,
+        instructor_info.HireDate,
         instructor_info.Order,
         post_data.retirement_date,
     )
