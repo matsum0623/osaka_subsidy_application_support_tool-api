@@ -129,9 +129,12 @@ const output_monthly_report = async (after_school_id, ym) => {
   const instructor_sheet = book.sheet("職員一覧")
   // 年度始まりの日付
   const start_ymd = parseInt(ym.split('-')[1]) >= 4 ? ym.split('-')[0] + '-04-01' : (parseInt(ym.split('-')[0]) - 1) + '-04-01'
+  // 翌月の1日
+  const next_month = (new Date(start_month_date.getFullYear(), start_month_date.getMonth() + 1, 1)).toISOString().slice(0, 10)
   let row_idx = 2
   all_instructors.forEach((value) => {
     if(value.RetirementDate < start_ymd) return
+    if(value.HireDate > next_month) return
     instructors[value['SK'].split('#')[1]] = value['Name']
     input_cell(instructor_sheet, "B" + row_idx, value['Name'], 'text')
     input_cell(instructor_sheet, "C" + row_idx, value.Qualification ? '放課後児童支援員' : '補助員', 'text')
@@ -249,6 +252,8 @@ const output_work_schedule = async (after_school_id, ym) => {
   let instructor_count = -1
   all_instructors.sort((a, b) => (a.Order - b.Order)).forEach((value) => {
     if(value.RetirementDate < ym + '-01') return
+    const next_month = (new Date(start_month_date.getFullYear(), start_month_date.getMonth() + 1, 1)).toISOString().slice(0, 10)
+    if(value.HireDate > next_month) return
     // 名前を入れていく
     instructor_count++
     const instructor_name = value['Name']
