@@ -23,6 +23,7 @@ Globals:
     Environment:
       Variables:
         DYNAMODB_TABLE_NAME: !Ref DynamoDB
+        TZ: Asia/Tokyo
   Api:
     Cors:
       AllowOrigin: "'*'"
