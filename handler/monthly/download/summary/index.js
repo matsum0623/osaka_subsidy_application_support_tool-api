@@ -8,6 +8,11 @@ const { Auth } = require('Auth')
 
 const XlsxPopulate = require('xlsx-populate');
 
+const SHEET_NAME = '加配情報';
+const DATA_ROWS = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+const TMP_FILE_NAME = `/tmp/Output.xlsx`;
+const S3_DIR = 'additional_instructor_work_hours';
+
 exports.handler = async (event, context) => {
   const decode_token = Auth.check_id_token(event)
   if(!decode_token){
@@ -42,67 +47,16 @@ exports.handler = async (event, context) => {
     const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
     const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-    console.log(startDate, endDate);
-
     additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
   }
 
-  const book = await XlsxPopulate.fromBlankAsync();
-  book.sheet(0).name("加配情報");
-  const sheet = book.sheet(0);
+  // Excelファイルの作成
+  await createXlsxFile();
 
-  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-
-  base_row = 1
-  for (const workHours of Object.values(additionalInstructors)) {
-    const totalHours = [];
-    const workHoursWithinOpeningHours = [];
-    const additionalHours = [];
-
-    for (const hours of Object.values(workHours.WorkHours)) {
-      totalHours.push(hours.TotalHours);
-      workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
-      additionalHours.push(hours.AdditionalHours);
-    }
-
-    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
-    totalHours.forEach((hours, index) => {
-      sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
-    })
-    additionalHours.forEach((hours, index) => {
-      sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
-    })
-    workHoursWithinOpeningHours.forEach((hours, index) => {
-      sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
-    })
-    base_row += 4;
-  }
-  const tmp_file_name = `/tmp/Output.xlsx`;
-  await book.toFileAsync(tmp_file_name);
-
-  const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
-  const timestamp = (new Date()).getTime()
-  const dir = 'additional_instructor_work_hours';
-  const key = `${dir}/${timestamp}_${random_number}.xlsx`
-  try {
-    await s3.putObject({
-      Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
-      Key: key,
-      Body: fs.createReadStream(tmp_file_name),
-    }).promise();
-
-  } catch (error) {
-    console.log(error)
-  }
-  const signed_url = await s3.getSignedUrl('getObject', {
-    Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
-    Key: key,
-    Expires: 60,
-    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`加配情報_${year}_${timestamp}.xlsx`)}"`,
-  })
+  // S3にアップロード
+  const signed_url = await uploadToS3(year);
 
   return response_ok({ url: signed_url });
-
 }
 
 async function getAdditionalInstructors(after_school_id) {
@@ -168,4 +122,64 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
   });
 
   return additionalInstructors;
+}
+
+async function createXlsxFile() {
+  const book = await XlsxPopulate.fromBlankAsync();
+  book.sheet(0).name(SHEET_NAME);
+  const sheet = book.sheet(0);
+
+  base_row = 2
+  for (const workHours of Object.values(additionalInstructors)) {
+    const totalHours = [];
+    const workHoursWithinOpeningHours = [];
+    const additionalHours = [];
+
+    for (const hours of Object.values(workHours.WorkHours)) {
+      totalHours.push(hours.TotalHours);
+      workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
+      additionalHours.push(hours.AdditionalHours);
+    }
+
+    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
+    const rowLabels = [
+      { offset: 1, label: '合計', data: totalHours },
+      { offset: 2, label: '加配', data: additionalHours },
+      { offset: 3, label: '開所内', data: workHoursWithinOpeningHours }
+    ];
+    rowLabels.forEach(({ data, offset, label }) => {
+      sheet.cell(`A${base_row + offset}`).value(label);
+      data.forEach((hours, index) => {
+        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convertIntToTime(hours));
+      });
+      const sum = data.reduce((acc, val) => acc + val, 0);
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convertIntToTime(sum));
+    });
+
+    base_row += 4;
+  }
+  await book.toFileAsync(TMP_FILE_NAME);
+}
+
+async function uploadToS3(year) {
+  const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
+  const timestamp = (new Date()).getTime()
+  const key = `${S3_DIR}/${timestamp}_${random_number}.xlsx`
+  try {
+    await s3.putObject({
+      Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
+      Key: key,
+      Body: fs.createReadStream(TMP_FILE_NAME),
+    }).promise();
+
+  } catch (error) {
+    console.log(error)
+  }
+  const signed_url = await s3.getSignedUrl('getObject', {
+    Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
+    Key: key,
+    Expires: 60,
+    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`加配情報_${year}_${timestamp}.xlsx`)}"`,
+  })
+  return signed_url;
 }
