@@ -29,7 +29,11 @@ exports.handler = async (event, context) => {
   const month = 4;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
-  let additionalInstructors = await getAdditionalInstructors(schoolId);
+  // 開始日と終了日作成。開始日は年度＋月＋締め日翌日、終了日は翌年度＋前月＋締め日
+  const year_start_date = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
+  const year_end_date = `${(year + 1).toString().padStart(4, '0')}-${(month - 1).toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
+
+  let additionalInstructors = await getAdditionalInstructors(schoolId, year_start_date, year_end_date);
 
   for (let i = 0; i < 12; i++) {
     let calcMonth = month + i;
@@ -59,10 +63,16 @@ exports.handler = async (event, context) => {
   return response_ok({ url: signed_url });
 }
 
-async function getAdditionalInstructors(after_school_id) {
+async function getAdditionalInstructors(after_school_id, start_date, end_date) {
   const instructors = await instructor.get_additional(after_school_id)
   const additionalInstructors = {};
   instructors.forEach(item => {
+    // 在職期間が指定年度内であることをチェック
+    if (item.HireDate && item.RetirementDate) {
+      if ((item.RetirementDate ? item.RetirementDate : '2099-12-31') < start_date || end_date < (item.HireDate ? item.HireDate : '1900-01-01')) {
+         return; // 在職期間が指定年度外の場合はスキップ
+      }
+    }
     const instructorId = item.SK.split('#')[1];
     additionalInstructors[instructorId] = {
       InstructorName: item.Name,
