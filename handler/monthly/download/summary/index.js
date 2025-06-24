@@ -27,24 +27,24 @@ exports.handler = async (event, context) => {
   let additionalInstructors = await getAdditionalInstructors(schoolId);
 
   for (let i = 0; i < 12; i++) {
-      let calcMonth = month + i;
-      let calcYear = year;
+    let calcMonth = month + i;
+    let calcYear = year;
 
-      if (calcMonth > 12) {
-          calcYear += 1;
-          calcMonth -= 12;
-      }
+    if (calcMonth > 12) {
+      calcYear += 1;
+      calcMonth -= 12;
+    }
 
-      const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
-      const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
-      const prevYear = calcMonth === 1 ? calcYear - 1 : calcYear;
+    const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
+    const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
+    const prevYear = calcMonth === 1 ? calcYear - 1 : calcYear;
 
-      const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
-      const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
+    const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
+    const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-      console.log(startDate, endDate);
+    console.log(startDate, endDate);
 
-      additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
+    additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
   }
 
   const book = await XlsxPopulate.fromBlankAsync();
@@ -55,27 +55,27 @@ exports.handler = async (event, context) => {
 
   base_row = 1
   for (const workHours of Object.values(additionalInstructors)) {
-      const totalHours = [];
-      const workHoursWithinOpeningHours = [];
-      const additionalHours = [];
+    const totalHours = [];
+    const workHoursWithinOpeningHours = [];
+    const additionalHours = [];
 
-      for (const hours of Object.values(workHours.WorkHours)) {
-          totalHours.push(hours.TotalHours);
-          workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
-          additionalHours.push(hours.AdditionalHours);
-      }
+    for (const hours of Object.values(workHours.WorkHours)) {
+      totalHours.push(hours.TotalHours);
+      workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
+      additionalHours.push(hours.AdditionalHours);
+    }
 
-      sheet.cell(`A${base_row}`).value(workHours.InstructorName);
-      totalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
-      })
-      additionalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
-      })
-      workHoursWithinOpeningHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
-      })
-      base_row += 4;
+    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
+    totalHours.forEach((hours, index) => {
+      sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
+    })
+    additionalHours.forEach((hours, index) => {
+      sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
+    })
+    workHoursWithinOpeningHours.forEach((hours, index) => {
+      sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
+    })
+    base_row += 4;
   }
   const tmp_file_name = `/tmp/Output.xlsx`;
   await book.toFileAsync(tmp_file_name);
@@ -106,66 +106,66 @@ exports.handler = async (event, context) => {
 }
 
 async function getAdditionalInstructors(after_school_id) {
-    const instructors = await instructor.get_additional(after_school_id)
-    const additionalInstructors = {};
-    instructors.forEach(item => {
-        const instructorId = item.SK.split('#')[1];
-        additionalInstructors[instructorId] = {
-            InstructorName: item.Name,
-            WorkHours: {}
-        };
-    });
+  const instructors = await instructor.get_additional(after_school_id)
+  const additionalInstructors = {};
+  instructors.forEach(item => {
+    const instructorId = item.SK.split('#')[1];
+    additionalInstructors[instructorId] = {
+      InstructorName: item.Name,
+      WorkHours: {}
+    };
+  });
 
-    return additionalInstructors;
+  return additionalInstructors;
 }
 
 function convertTimeToInt(timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours + minutes / 60;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours + minutes / 60;
 }
 
 function convertIntToTime(intTime) {
-    const hour = Math.floor(intTime);
-    const minute = Math.round((intTime - hour) * 60);
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const hour = Math.floor(intTime);
+  const minute = Math.round((intTime - hour) * 60);
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 }
 
 async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym) {
-    const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
+  const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
 
-    for (const inst in additionalInstructors) {
-        additionalInstructors[inst].WorkHours[ym] = {
-            TotalHours: 0,
-            WorkHoursWithinOpeningHours: 0,
-            AdditionalHours: 0,
-        };
-    }
+  for (const inst in additionalInstructors) {
+    additionalInstructors[inst].WorkHours[ym] = {
+      TotalHours: 0,
+      WorkHoursWithinOpeningHours: 0,
+      AdditionalHours: 0,
+    };
+  }
 
-    daily_data.forEach(item => {
-        try {
-            const open = convertTimeToInt(item.OpenTime.start);
-            const close = convertTimeToInt(item.OpenTime.end);
+  daily_data.forEach(item => {
+    try {
+      const open = convertTimeToInt(item.OpenTime.start);
+      const close = convertTimeToInt(item.OpenTime.end);
 
-            item.Details.InstructorWorkHours.forEach(workHour => {
-                const instructorId = workHour.InstructorId;
-                if (additionalInstructors[instructorId]) {
-                    const instStart = convertTimeToInt(workHour.StartTime);
-                    const instEnd = convertTimeToInt(workHour.EndTime);
+      item.Details.InstructorWorkHours.forEach(workHour => {
+        const instructorId = workHour.InstructorId;
+        if (additionalInstructors[instructorId]) {
+          const instStart = convertTimeToInt(workHour.StartTime);
+          const instEnd = convertTimeToInt(workHour.EndTime);
 
-                    additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
+          additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
 
-                    if (workHour.AdditionalCheck) {
-                        additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
-                    } else {
-                        additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-                    }
-                }
-            });
-        } catch (error) {
-            console.error(item);
-            throw error;
+          if (workHour.AdditionalCheck) {
+              additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
+          } else {
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
+          }
         }
-    });
+      });
+    } catch (error) {
+        console.error(item);
+        throw error;
+    }
+  });
 
-    return additionalInstructors;
+  return additionalInstructors;
 }
