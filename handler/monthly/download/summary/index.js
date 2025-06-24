@@ -39,12 +39,12 @@ exports.handler = async (event, context) => {
   for (let i = 0; i < 12; i++) {
     let calcMonth = month + i;
     let calcYear = year;
-    month_list.push(calcMonth);
 
     if (calcMonth > 12) {
       calcYear += 1;
       calcMonth -= 12;
     }
+    month_list.push(calcMonth);
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
     const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
