@@ -51,7 +51,7 @@ exports.handler = async (event, context) => {
   }
 
   // Excelファイルの作成
-  await createXlsxFile();
+  await createXlsxFile(additionalInstructors);
 
   // S3にアップロード
   const signed_url = await uploadToS3(year);
@@ -124,7 +124,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
   return additionalInstructors;
 }
 
-async function createXlsxFile() {
+async function createXlsxFile(additionalInstructors) {
   const book = await XlsxPopulate.fromBlankAsync();
   book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
