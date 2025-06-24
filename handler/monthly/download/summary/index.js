@@ -9,7 +9,7 @@ const { Auth } = require('Auth')
 const XlsxPopulate = require('xlsx-populate');
 
 const SHEET_NAME = '加配情報';
-const DATA_ROWS = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 const TMP_FILE_NAME = `/tmp/Output.xlsx`;
 const S3_DIR = 'additional_instructor_work_hours';
 
@@ -35,9 +35,11 @@ exports.handler = async (event, context) => {
 
   let additionalInstructors = await getAdditionalInstructors(schoolId, year_start_date, year_end_date);
 
+  const month_list = [];
   for (let i = 0; i < 12; i++) {
     let calcMonth = month + i;
     let calcYear = year;
+    month_list.push(calcMonth);
 
     if (calcMonth > 12) {
       calcYear += 1;
@@ -55,7 +57,7 @@ exports.handler = async (event, context) => {
   }
 
   // Excelファイルの作成
-  await createXlsxFile(additionalInstructors);
+  await createXlsxFile(additionalInstructors, month_list);
 
   // S3にアップロード
   const signed_url = await uploadToS3(year);
@@ -68,10 +70,8 @@ async function getAdditionalInstructors(after_school_id, start_date, end_date) {
   const additionalInstructors = {};
   instructors.forEach(item => {
     // 在職期間が指定年度内であることをチェック
-    if (item.HireDate && item.RetirementDate) {
-      if ((item.RetirementDate ? item.RetirementDate : '2099-12-31') < start_date || end_date < (item.HireDate ? item.HireDate : '1900-01-01')) {
-         return; // 在職期間が指定年度外の場合はスキップ
-      }
+    if ((item.RetirementDate ? item.RetirementDate : '2099-12-31') < start_date || end_date < (item.HireDate ? item.HireDate : '1900-01-01')) {
+        return; // 在職期間が指定年度外の場合はスキップ
     }
     const instructorId = item.SK.split('#')[1];
     additionalInstructors[instructorId] = {
@@ -134,12 +134,19 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
   return additionalInstructors;
 }
 
-async function createXlsxFile(additionalInstructors) {
+async function createXlsxFile(additionalInstructors, month_list) {
   const book = await XlsxPopulate.fromBlankAsync();
   book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
 
   base_row = 2
+  // ヘッダーの設定
+  sheet.cell('A1').value('指導員名');
+  DATA_ROWS.forEach((col, index) => {
+    sheet.cell(`${col}1`).value(`${month_list[index]}月`);
+  });
+  sheet.cell(`${DATA_ROWS[DATA_ROWS.length - 1]}1`).value('合計');
+  // 指導員ごとの情報
   for (const workHours of Object.values(additionalInstructors)) {
     const totalHours = [];
     const workHoursWithinOpeningHours = [];
@@ -153,12 +160,12 @@ async function createXlsxFile(additionalInstructors) {
 
     sheet.cell(`A${base_row}`).value(workHours.InstructorName);
     const rowLabels = [
-      { offset: 1, label: '合計', data: totalHours },
-      { offset: 2, label: '加配', data: additionalHours },
-      { offset: 3, label: '開所内', data: workHoursWithinOpeningHours }
+      { offset: 0, label: '合計', data: totalHours },
+      { offset: 1, label: '加配', data: additionalHours },
+      { offset: 2, label: '開所内', data: workHoursWithinOpeningHours }
     ];
     rowLabels.forEach(({ data, offset, label }) => {
-      sheet.cell(`A${base_row + offset}`).value(label);
+      sheet.cell(`B${base_row + offset}`).value(label);
       data.forEach((hours, index) => {
         sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convertIntToTime(hours));
       });
@@ -166,7 +173,7 @@ async function createXlsxFile(additionalInstructors) {
       sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convertIntToTime(sum));
     });
 
-    base_row += 4;
+    base_row += 3;
   }
   await book.toFileAsync(TMP_FILE_NAME);
 }
