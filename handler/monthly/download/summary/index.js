@@ -8,6 +8,11 @@ const { Auth } = require('Auth')
 
 const XlsxPopulate = require('xlsx-populate');
 
+const SHEET_NAME = '加配情報';
+const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+const TMP_FILE_NAME = `/tmp/Output.xlsx`;
+const S3_DIR = 'additional_instructor_work_hours';
+
 exports.handler = async (event, context) => {
   const decode_token = Auth.check_id_token(event)
   if(!decode_token){
@@ -24,71 +29,170 @@ exports.handler = async (event, context) => {
   const month = 5;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
-  let additionalInstructors = await getAdditionalInstructors(schoolId);
+  // 開始日と終了日作成。開始日は年度＋月＋締め日翌日、終了日は翌年度＋前月＋締め日
+  const year_start_date = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
+  const year_end_date = `${(year + 1).toString().padStart(4, '0')}-${(month - 1).toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
+  let additionalInstructors = await getAdditionalInstructors(schoolId, year_start_date, year_end_date);
+
+  const month_list = [];
   for (let i = 0; i < 12; i++) {
-      let calcMonth = month + i;
-      let calcYear = year;
+    let calcMonth = month + i;
+    let calcYear = year;
 
-      if (calcMonth > 12) {
-          calcYear += 1;
-          calcMonth -= 12;
-      }
+    if (calcMonth > 12) {
+      calcYear += 1;
+      calcMonth -= 12;
+    }
+    month_list.push(calcMonth);
 
-      const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
-      const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
-      const prevYear = calcMonth === 1 ? calcYear - 1 : calcYear;
+    const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
+    const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
+    const prevYear = calcMonth === 1 ? calcYear - 1 : calcYear;
 
-      const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
-      const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
+    const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
+    const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-      console.log(startDate, endDate);
-
-      additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
+    additionalInstructors = await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym);
   }
 
+  // Excelファイルの作成
+  await createXlsxFile(additionalInstructors, month_list);
+
+  // S3にアップロード
+  const signed_url = await uploadToS3(year);
+
+  return response_ok({ url: signed_url });
+}
+
+async function getAdditionalInstructors(after_school_id, start_date, end_date) {
+  const instructors = await instructor.get_additional(after_school_id)
+  const additionalInstructors = {};
+  instructors.forEach(item => {
+    // 在職期間が指定年度内であることをチェック
+    if ((item.RetirementDate ? item.RetirementDate : '2099-12-31') < start_date || end_date < (item.HireDate ? item.HireDate : '1900-01-01')) {
+        return; // 在職期間が指定年度外の場合はスキップ
+    }
+    const instructorId = item.SK.split('#')[1];
+    additionalInstructors[instructorId] = {
+      InstructorName: item.Name,
+      WorkHours: {}
+    };
+  });
+
+  return additionalInstructors;
+}
+
+function convertTimeToInt(timeStr) {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours + minutes / 60;
+}
+
+function convertIntToTime(intTime) {
+  const hour = Math.floor(intTime);
+  const minute = Math.round((intTime - hour) * 60);
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+}
+
+async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym) {
+  const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
+
+  for (const inst in additionalInstructors) {
+    additionalInstructors[inst].WorkHours[ym] = {
+      TotalHours: 0,
+      WorkHoursWithinOpeningHours: 0,
+      WorkHoursWithoutOpeningHours: 0,
+      AdditionalHours: 0,
+    };
+  }
+
+  daily_data.forEach(item => {
+    try {
+      const open = convertTimeToInt(item.OpenTime.start);
+      const close = convertTimeToInt(item.OpenTime.end);
+
+      item.Details.InstructorWorkHours.forEach(workHour => {
+        const instructorId = workHour.InstructorId;
+        if (additionalInstructors[instructorId]) {
+          const instStart = convertTimeToInt(workHour.StartTime);
+          const instEnd = convertTimeToInt(workHour.EndTime);
+
+          additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
+
+          if (workHour.AdditionalCheck) {
+              additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
+          } else {
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - (Math.min(close, instEnd) - Math.max(open, instStart));
+          }
+        }
+      });
+    } catch (error) {
+        console.error(item);
+        throw error;
+    }
+  });
+
+  return additionalInstructors;
+}
+
+async function createXlsxFile(additionalInstructors, month_list) {
   const book = await XlsxPopulate.fromBlankAsync();
-  book.sheet(0).name("加配情報");
+  book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
 
-  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-
-  base_row = 1
+  base_row = 2
+  // ヘッダーの設定
+  sheet.cell('A1').value('指導員名');
+  DATA_ROWS.forEach((col, index) => {
+    sheet.cell(`${col}1`).value(`${month_list[index]}月`);
+  });
+  sheet.cell(`${DATA_ROWS[DATA_ROWS.length - 1]}1`).value('合計');
+  // 指導員ごとの情報
   for (const workHours of Object.values(additionalInstructors)) {
-      const totalHours = [];
-      const workHoursWithinOpeningHours = [];
-      const additionalHours = [];
+    const totalHours = [];
+    const workHoursWithinOpeningHours = [];
+    const workHoursWithoutOpeningHours = [];
+    const additionalHours = [];
 
-      for (const hours of Object.values(workHours.WorkHours)) {
-          totalHours.push(hours.TotalHours);
-          workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
-          additionalHours.push(hours.AdditionalHours);
-      }
+    for (const hours of Object.values(workHours.WorkHours)) {
+      totalHours.push(hours.TotalHours);
+      workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
+      workHoursWithoutOpeningHours.push(hours.WorkHoursWithoutOpeningHours);
+      additionalHours.push(hours.AdditionalHours);
+    }
 
-      sheet.cell(`A${base_row}`).value(workHours.InstructorName);
-      totalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 1}`).value(convertIntToTime(hours));
-      })
-      additionalHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 2}`).value(convertIntToTime(hours));
-      })
-      workHoursWithinOpeningHours.forEach((hours, index) => {
-          sheet.cell(`${rows[index]}${base_row + 3}`).value(convertIntToTime(hours));
-      })
-      base_row += 4;
+    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
+    const rowLabels = [
+      { offset: 0, label: '合計', data: totalHours },
+      { offset: 1, label: '加配1人目', data: additionalHours },
+      { offset: 2, label: '加配1人目以外', data: [] },
+      { offset: 3, label: '医ケア', data: [] },
+      { offset: 4, label: '開所時間外', data: workHoursWithoutOpeningHours },
+    ];
+    rowLabels.forEach(({ data, offset, label }) => {
+      sheet.cell(`B${base_row + offset}`).value(label);
+      data.forEach((hours, index) => {
+        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convertIntToTime(hours));
+      });
+      const sum = data.reduce((acc, val) => acc + val, 0);
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convertIntToTime(sum));
+    });
+
+    base_row += 5;
   }
-  const tmp_file_name = `/tmp/Output.xlsx`;
-  await book.toFileAsync(tmp_file_name);
+  await book.toFileAsync(TMP_FILE_NAME);
+}
 
+async function uploadToS3(year) {
   const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
   const timestamp = (new Date()).getTime()
-  const dir = 'additional_instructor_work_hours';
-  const key = `${dir}/${timestamp}_${random_number}.xlsx`
+  const key = `${S3_DIR}/${timestamp}_${random_number}.xlsx`
   try {
     await s3.putObject({
       Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
       Key: key,
-      Body: fs.createReadStream(tmp_file_name),
+      Body: fs.createReadStream(TMP_FILE_NAME),
     }).promise();
 
   } catch (error) {
@@ -100,72 +204,5 @@ exports.handler = async (event, context) => {
     Expires: 60,
     ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`加配情報_${year}_${timestamp}.xlsx`)}"`,
   })
-
-  return response_ok({ url: signed_url });
-
-}
-
-async function getAdditionalInstructors(after_school_id) {
-    const instructors = await instructor.get_additional(after_school_id)
-    const additionalInstructors = {};
-    instructors.forEach(item => {
-        const instructorId = item.SK.split('#')[1];
-        additionalInstructors[instructorId] = {
-            InstructorName: item.Name,
-            WorkHours: {}
-        };
-    });
-
-    return additionalInstructors;
-}
-
-function convertTimeToInt(timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours + minutes / 60;
-}
-
-function convertIntToTime(intTime) {
-    const hour = Math.floor(intTime);
-    const minute = Math.round((intTime - hour) * 60);
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-}
-
-async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym) {
-    const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
-
-    for (const inst in additionalInstructors) {
-        additionalInstructors[inst].WorkHours[ym] = {
-            TotalHours: 0,
-            WorkHoursWithinOpeningHours: 0,
-            AdditionalHours: 0,
-        };
-    }
-
-    daily_data.forEach(item => {
-        try {
-            const open = convertTimeToInt(item.OpenTime.start);
-            const close = convertTimeToInt(item.OpenTime.end);
-
-            item.Details.InstructorWorkHours.forEach(workHour => {
-                const instructorId = workHour.InstructorId;
-                if (additionalInstructors[instructorId]) {
-                    const instStart = convertTimeToInt(workHour.StartTime);
-                    const instEnd = convertTimeToInt(workHour.EndTime);
-
-                    additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
-
-                    if (workHour.AdditionalCheck) {
-                        additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
-                    } else {
-                        additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-                    }
-                }
-            });
-        } catch (error) {
-            console.error(item);
-            throw error;
-        }
-    });
-
-    return additionalInstructors;
+  return signed_url;
 }
