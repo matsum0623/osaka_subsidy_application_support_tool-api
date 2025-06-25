@@ -101,6 +101,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
     additionalInstructors[inst].WorkHours[ym] = {
       TotalHours: 0,
       WorkHoursWithinOpeningHours: 0,
+      WorkHoursWithoutOpeningHours: 0,
       AdditionalHours: 0,
     };
   }
@@ -122,6 +123,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
               additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
           } else {
               additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.min(close, instEnd) - Math.max(open, instStart);
           }
         }
       });
@@ -150,19 +152,23 @@ async function createXlsxFile(additionalInstructors, month_list) {
   for (const workHours of Object.values(additionalInstructors)) {
     const totalHours = [];
     const workHoursWithinOpeningHours = [];
+    const workHoursWithoutOpeningHours = [];
     const additionalHours = [];
 
     for (const hours of Object.values(workHours.WorkHours)) {
       totalHours.push(hours.TotalHours);
       workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
+      workHoursWithoutOpeningHours.push(hours.WorkHoursWithoutOpeningHours);
       additionalHours.push(hours.AdditionalHours);
     }
 
     sheet.cell(`A${base_row}`).value(workHours.InstructorName);
     const rowLabels = [
       { offset: 0, label: '合計', data: totalHours },
-      { offset: 1, label: '加配', data: additionalHours },
-      { offset: 2, label: '開所内', data: workHoursWithinOpeningHours }
+      { offset: 1, label: '加配1人目', data: additionalHours },
+      { offset: 2, label: '加配1人目以外', data: [] },
+      { offset: 3, label: '医ケア', data: [] },
+      { offset: 4, label: '開所時間外', data: workHoursWithoutOpeningHours },
     ];
     rowLabels.forEach(({ data, offset, label }) => {
       sheet.cell(`B${base_row + offset}`).value(label);
@@ -173,7 +179,7 @@ async function createXlsxFile(additionalInstructors, month_list) {
       sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convertIntToTime(sum));
     });
 
-    base_row += 3;
+    base_row += 5;
   }
   await book.toFileAsync(TMP_FILE_NAME);
 }
