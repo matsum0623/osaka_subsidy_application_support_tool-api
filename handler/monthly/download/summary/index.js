@@ -123,7 +123,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
               additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
           } else {
               additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.min(close, instEnd) - Math.max(open, instStart);
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - (Math.min(close, instEnd) - Math.max(open, instStart));
           }
         }
       });
