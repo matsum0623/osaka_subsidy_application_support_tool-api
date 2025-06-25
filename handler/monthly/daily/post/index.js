@@ -1,5 +1,5 @@
-const {response_ok, response_403} = require('lambda_response')
-const {after_school, daily, instructor} = require('connect_dynamodb')
+const { response_ok, response_403 } = require('lambda_response')
+const { daily, instructor } = require('connect_dynamodb')
 const { Auth } = require('Auth')
 
 exports.handler = async (event, context) => {
@@ -18,10 +18,8 @@ exports.handler = async (event, context) => {
   // POSTデータを整理
   const instructor_work_hours_tmp = post_data.instructors
 
-  const after_school_info = await after_school.get_item(after_school_id)
-  const open_type = after_school_info.Config.OpenTypes[post_data.open_type]
-  const open  = post_data.open_type != '9' ? open_type.OpenTime : post_data.open_time.start
-  const close = post_data.open_type != '9' ? open_type.CloseTime : post_data.open_time.end
+  const open  = post_data.open_time.start
+  const close = post_data.open_time.end
   const instructor_work_hours =[]
   const open_instructor = {
     "Qualification": 0,
