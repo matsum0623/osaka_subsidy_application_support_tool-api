@@ -26,7 +26,7 @@ exports.handler = async (event, context) => {
 
   const schoolId = qsp.school_id;
   const year = parseInt(qsp.year);
-  const month = 4;  // TODO: 開始月度を指定できるように
+  const month = 5;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
   // 開始日と終了日作成。開始日は年度＋月＋締め日翌日、終了日は翌年度＋前月＋締め日
