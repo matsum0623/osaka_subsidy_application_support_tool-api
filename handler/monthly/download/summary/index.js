@@ -123,8 +123,8 @@ async function createAdditionalSummary(schoolId, year) {
       WorkHours: [
         [], // 合計
         [], // 加配1人目
-        [], // 加配1人目以外
-        [], // 医ケア
+        [0,0,0,0,0,0,0,0,0,0,0,0], // 加配1人目以外
+        [0,0,0,0,0,0,0,0,0,0,0,0], // 医ケア
         [], // 開所時間外
       ]
     }
@@ -239,8 +239,8 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
       data.forEach((hours, monthIndex) => {
         sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
       });
-      const sum = inst_data.WorkHours.reduce((acc, val) => acc + val, 0);
-      sheet.cell(`${DATA_ROWS[inst_data.WorkHours.length]}${base_row}`).value(convert_int_to_time(sum));
+      const sum = data.reduce((acc, val) => acc + val, 0);
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(convert_int_to_time(sum));
       base_row++;
     });
   })
