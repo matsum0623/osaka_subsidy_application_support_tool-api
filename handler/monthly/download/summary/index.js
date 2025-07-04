@@ -91,7 +91,7 @@ async function createAdditionalSummary(schoolId, year) {
   const year_start_date = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
   const year_end_date = `${(year + 1).toString().padStart(4, '0')}-${(month - 1).toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-  let additionalInstructors = await getInstructors(schoolId, year_start_date, year_end_date, true);
+  let instructors = await getInstructors(schoolId, year_start_date, year_end_date, true);
 
   const month_list = [];
   const month_open_hours = [];
@@ -112,17 +112,58 @@ async function createAdditionalSummary(schoolId, year) {
     const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
     const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-    month_open_hours.push(await calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym));
-  }
+    month_open_hours.push(await calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym));
 
-  // Excelファイルの作成
-  await createXlsxFile(additionalInstructors, month_list, month_open_hours, [
+    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
+    const row_labels = [
       { offset: 0, label: '合計', data: totalHours },
       { offset: 1, label: '加配1人目', data: additionalHours },
       { offset: 2, label: '加配1人目以外', data: [] },
       { offset: 3, label: '医ケア', data: [] },
       { offset: 4, label: '開所時間外', data: workHoursWithoutOpeningHours },
-    ]);
+    ]
+    row_labels.forEach(({ data, offset, label }) => {
+      sheet.cell(`B${base_row + offset}`).value(label);
+      data.forEach((hours, index) => {
+        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convert_int_to_time(hours));
+      });
+      const sum = data.reduce((acc, val) => acc + val, 0);
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convert_int_to_time(sum));
+    });
+
+    base_row += row_labels.length;
+  }
+
+  // 出力対象のデータに成形する
+  const view_data = []
+  for (const workHours of Object.values(instructors)) {
+    const tmp_data = {
+      InstructorName: workHours.InstructorName,
+      WorkHours: [
+        [], // 合計
+        [], // 加配1人目
+        [], // 加配1人目以外
+        [], // 医ケア
+        [], // 開所時間外
+      ]
+    }
+
+    for (const hours of Object.values(workHours.WorkHours)) {
+      tmp_data.WorkHours[0].push(hours.TotalHours);
+      tmp_data.WorkHours[1].push(hours.AdditionalHours);
+      tmp_data.WorkHours[4].push(hours.WorkHoursWithoutOpeningHours);
+    }
+    view_data.push(tmp_data);
+  }
+
+  // Excelファイルの作成
+  await createXlsxFile(view_data, month_list, month_open_hours, [
+    { offset: 0, label: '合計' },
+    { offset: 1, label: '加配1人目' },
+    { offset: 2, label: '加配1人目以外' },
+    { offset: 3, label: '医ケア' },
+    { offset: 4, label: '開所時間外' },
+  ]);
 
   // S3にアップロード
   return await uploadToS3('additional_instructor_work_hours', '加配情報', year);
@@ -130,27 +171,27 @@ async function createAdditionalSummary(schoolId, year) {
 
 async function getInstructors(after_school_id, start_date, end_date, additional = false) {
   const instructors = additional ? await instructor.get_additional(after_school_id) : await instructor.get_list(after_school_id);
-  const additionalInstructors = {};
+  const res_instructors = {};
   instructors.forEach(item => {
     // 在職期間が指定年度内であることをチェック
     if ((item.RetirementDate ? item.RetirementDate : '2099-12-31') < start_date || end_date < (item.HireDate ? item.HireDate : '1900-01-01')) {
         return; // 在職期間が指定年度外の場合はスキップ
     }
     const instructorId = item.SK.split('#')[1];
-    additionalInstructors[instructorId] = {
+    res_instructors[instructorId] = {
       InstructorName: item.Name,
       WorkHours: {}
     };
   });
 
-  return additionalInstructors;
+  return res_instructors;
 }
 
-async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym) {
+async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym) {
   const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
 
-  for (const inst in additionalInstructors) {
-    additionalInstructors[inst].WorkHours[ym] = {
+  for (const inst in instructors) {
+    instructors[inst].WorkHours[ym] = {
       TotalHours: 0,
       WorkHoursWithinOpeningHours: 0,
       WorkHoursWithoutOpeningHours: 0,
@@ -168,17 +209,17 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
 
       item.Details.InstructorWorkHours.forEach(workHour => {
         const instructorId = workHour.InstructorId;
-        if (additionalInstructors[instructorId]) {
+        if (instructors[instructorId]) {
           const instStart = convert_time_to_int(workHour.StartTime);
           const instEnd = convert_time_to_int(workHour.EndTime);
 
-          additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
+          instructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
 
           if (workHour.AdditionalCheck) {
-              additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
+              instructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
           } else {
-              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.max(Math.min(close, instEnd) - Math.max(open, instStart), 0);
+              instructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
+              instructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.max(Math.min(close, instEnd) - Math.max(open, instStart), 0);
           }
         }
       });
@@ -191,7 +232,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
   return open_hours_sum;
 }
 
-async function createXlsxFile(additionalInstructors, month_list, month_open_hours, row_labels) {
+async function createXlsxFile(view_data, month_list, month_open_hours, row_labels) {
   const book = await XlsxPopulate.fromBlankAsync();
   book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
@@ -211,31 +252,15 @@ async function createXlsxFile(additionalInstructors, month_list, month_open_hour
 
   // 指導員ごとの情報
   base_row = 3
-  for (const workHours of Object.values(additionalInstructors)) {
-    const totalHours = [];
-    const workHoursWithinOpeningHours = [];
-    const workHoursWithoutOpeningHours = [];
-    const additionalHours = [];
-
-    for (const hours of Object.values(workHours.WorkHours)) {
-      totalHours.push(hours.TotalHours);
-      workHoursWithinOpeningHours.push(hours.WorkHoursWithinOpeningHours);
-      workHoursWithoutOpeningHours.push(hours.WorkHoursWithoutOpeningHours);
-      additionalHours.push(hours.AdditionalHours);
-    }
-
-    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
-    row_labels.forEach(({ data, offset, label }) => {
-      sheet.cell(`B${base_row + offset}`).value(label);
-      data.forEach((hours, index) => {
-        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convert_int_to_time(hours));
-      });
-      const sum = data.reduce((acc, val) => acc + val, 0);
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convert_int_to_time(sum));
+  view_data.forEach((inst_data) => {
+    sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
+    inst_data.WorkHours.forEach((hours, monthIndex) => {
+      sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
     });
-
-    base_row += row_labels.length;
-  }
+    const sum = inst_data.WorkHours.reduce((acc, val) => acc + val, 0);
+    sheet.cell(`${DATA_ROWS[inst_data.WorkHours.length]}${base_row}`).value(convert_int_to_time(sum));
+    base_row++;
+  })
   await book.toFileAsync(TMP_FILE_NAME);
 }
 
