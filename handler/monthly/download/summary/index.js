@@ -159,7 +159,7 @@ async function createAdditionalSummary(schoolId, year) {
 }
 
 async function getInstructors(after_school_id, start_date, end_date, additional = false) {
-  const instructors = additional ? await instructor.get_additional(after_school_id) : await instructor.get_list(after_school_id);
+  const instructors = additional ? await instructor.get_additional(after_school_id) : await instructor.get_all(after_school_id);
   const res_instructors = {};
   instructors.forEach(item => {
     // 在職期間が指定年度内であることをチェック
