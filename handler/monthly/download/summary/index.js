@@ -235,12 +235,14 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   base_row = 3
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
-    inst_data.WorkHours.forEach((hours, monthIndex) => {
-      sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
+    inst_data.WorkHours.forEach((data) => {
+      data.forEach((hours, monthIndex) => {
+        sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
+      });
+      const sum = inst_data.WorkHours.reduce((acc, val) => acc + val, 0);
+      sheet.cell(`${DATA_ROWS[inst_data.WorkHours.length]}${base_row}`).value(convert_int_to_time(sum));
+      base_row++;
     });
-    const sum = inst_data.WorkHours.reduce((acc, val) => acc + val, 0);
-    sheet.cell(`${DATA_ROWS[inst_data.WorkHours.length]}${base_row}`).value(convert_int_to_time(sum));
-    base_row++;
   })
   await book.toFileAsync(TMP_FILE_NAME);
 }
