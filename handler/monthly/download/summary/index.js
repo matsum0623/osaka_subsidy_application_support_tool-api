@@ -44,7 +44,7 @@ exports.handler = async (event, context) => {
       calcYear += 1;
       calcMonth -= 12;
     }
-    month_list.push(calcMonth);
+    month_list.push((calcMonth == 1 ? 12 : calcMonth - 1));
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
     const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
@@ -123,7 +123,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
               additionalInstructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
           } else {
               additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - (Math.min(close, instEnd) - Math.max(open, instStart));
+              additionalInstructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.max(Math.min(close, instEnd) - Math.max(open, instStart), 0);
           }
         }
       });
