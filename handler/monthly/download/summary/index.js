@@ -113,25 +113,6 @@ async function createAdditionalSummary(schoolId, year) {
     const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
     month_open_hours.push(await calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym));
-
-    sheet.cell(`A${base_row}`).value(workHours.InstructorName);
-    const row_labels = [
-      { offset: 0, label: '合計', data: totalHours },
-      { offset: 1, label: '加配1人目', data: additionalHours },
-      { offset: 2, label: '加配1人目以外', data: [] },
-      { offset: 3, label: '医ケア', data: [] },
-      { offset: 4, label: '開所時間外', data: workHoursWithoutOpeningHours },
-    ]
-    row_labels.forEach(({ data, offset, label }) => {
-      sheet.cell(`B${base_row + offset}`).value(label);
-      data.forEach((hours, index) => {
-        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convert_int_to_time(hours));
-      });
-      const sum = data.reduce((acc, val) => acc + val, 0);
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convert_int_to_time(sum));
-    });
-
-    base_row += row_labels.length;
   }
 
   // 出力対象のデータに成形する
