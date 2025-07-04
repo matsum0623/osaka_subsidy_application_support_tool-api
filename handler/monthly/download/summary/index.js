@@ -5,13 +5,13 @@ const s3 = new AWS.S3();
 const { response_ok, response_403 } = require('lambda_response')
 const { daily, instructor } = require('connect_dynamodb')
 const { Auth } = require('Auth')
+const { convert_time_to_int, convert_int_to_time } = require('Utils')
 
 const XlsxPopulate = require('xlsx-populate');
 
 const SHEET_NAME = '加配情報';
 const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 const TMP_FILE_NAME = `/tmp/Output.xlsx`;
-const S3_DIR = 'additional_instructor_work_hours';
 
 exports.handler = async (event, context) => {
   const decode_token = Auth.check_id_token(event)
@@ -72,7 +72,7 @@ async function createAdditionalSummary(schoolId, year) {
   await createXlsxFile(additionalInstructors, month_list);
 
   // S3にアップロード
-  return await uploadToS3(year);
+  return await uploadToS3('additional_instructor_work_hours', '加配情報', year);
 }
 
 async function getAdditionalInstructors(after_school_id, start_date, end_date) {
@@ -93,17 +93,6 @@ async function getAdditionalInstructors(after_school_id, start_date, end_date) {
   return additionalInstructors;
 }
 
-function convertTimeToInt(timeStr) {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return hours + minutes / 60;
-}
-
-function convertIntToTime(intTime) {
-  const hour = Math.floor(intTime);
-  const minute = Math.round((intTime - hour) * 60);
-  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-}
-
 async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInstructors, ym) {
   const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
 
@@ -118,14 +107,14 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, additionalInst
 
   daily_data.forEach(item => {
     try {
-      const open = convertTimeToInt(item.OpenTime.start);
-      const close = convertTimeToInt(item.OpenTime.end);
+      const open = convert_time_to_int(item.OpenTime.start);
+      const close = convert_time_to_int(item.OpenTime.end);
 
       item.Details.InstructorWorkHours.forEach(workHour => {
         const instructorId = workHour.InstructorId;
         if (additionalInstructors[instructorId]) {
-          const instStart = convertTimeToInt(workHour.StartTime);
-          const instEnd = convertTimeToInt(workHour.EndTime);
+          const instStart = convert_time_to_int(workHour.StartTime);
+          const instEnd = convert_time_to_int(workHour.EndTime);
 
           additionalInstructors[instructorId].WorkHours[ym].TotalHours += instEnd - instStart;
 
@@ -183,10 +172,10 @@ async function createXlsxFile(additionalInstructors, month_list) {
     rowLabels.forEach(({ data, offset, label }) => {
       sheet.cell(`B${base_row + offset}`).value(label);
       data.forEach((hours, index) => {
-        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convertIntToTime(hours));
+        sheet.cell(`${DATA_ROWS[index]}${base_row + offset}`).value(convert_int_to_time(hours));
       });
       const sum = data.reduce((acc, val) => acc + val, 0);
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convertIntToTime(sum));
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row + offset}`).value(convert_int_to_time(sum));
     });
 
     base_row += 5;
@@ -194,10 +183,10 @@ async function createXlsxFile(additionalInstructors, month_list) {
   await book.toFileAsync(TMP_FILE_NAME);
 }
 
-async function uploadToS3(year) {
+async function uploadToS3(s3_dir, prefix, year) {
   const random_number =  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
   const timestamp = (new Date()).getTime()
-  const key = `${S3_DIR}/${timestamp}_${random_number}.xlsx`
+  const key = `${s3_dir}/${timestamp}_${random_number}.xlsx`
   try {
     await s3.putObject({
       Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
@@ -212,7 +201,7 @@ async function uploadToS3(year) {
     Bucket: process.env.FILE_DOWNLOAD_BUCKET_NAME,
     Key: key,
     Expires: 60,
-    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`加配情報_${year}_${timestamp}.xlsx`)}"`,
+    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`${prefix}_${year}_${timestamp}.xlsx`)}"`,
   })
   return signed_url;
 }
