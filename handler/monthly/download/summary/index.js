@@ -85,7 +85,11 @@ async function createWorkSummary(schoolId, year) {
   }
 
   // Excelファイルの作成
-  await createXlsxFile(view_data, month_list, month_open_hours, ['合計', '開所時間内', '開所時間率']);
+  await createXlsxFile(view_data, month_list, month_open_hours, [
+    { convert: convert_int_to_time, label: '合計' },
+    { convert: convert_int_to_time, label: '開所時間内' },
+    { label: '開所時間率' },
+  ]);
 
   // S3にアップロード
   return await uploadToS3('work_summary', '勤務サマリ', year);
@@ -152,7 +156,13 @@ async function createAdditionalSummary(schoolId, year) {
   }
 
   // Excelファイルの作成
-  await createXlsxFile(view_data, month_list, month_open_hours, ['合計', '加配1人目', '加配1人目以外', '医ケア', '開所時間外']);
+  await createXlsxFile(view_data, month_list, month_open_hours, [
+    { convert: convert_int_to_time, label: '合計'},
+    { convert: convert_int_to_time, label: '加配1人目'},
+    { convert: convert_int_to_time, label: '加配1人目以外'},
+    { convert: convert_int_to_time, label: '医ケア'},
+    { convert: convert_int_to_time, label: '開所時間外'},
+  ]);
 
   // S3にアップロード
   return await uploadToS3('additional_instructor_work_hours', '加配情報', year);
@@ -245,11 +255,12 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
     inst_data.WorkHours.forEach((data, index) => {
-      sheet.cell(`B${base_row}`).value(row_labels[index]);
+      sheet.cell(`B${base_row}`).value(row_labels[index].label);
       data.forEach((hours, monthIndex) => {
-        sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
+        sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(row_labels[index].convert ? row_labels[index].convert(hours): hours);
       });
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(convert_int_to_time(data.reduce((acc, val) => acc + val, 0)));
+      const sum = data.reduce((acc, val) => acc + val, 0)
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(row_labels[index].convert ? row_labels[index].convert(sum) : sum);
       base_row++;
     });
   })
