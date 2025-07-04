@@ -43,7 +43,7 @@ async function createWorkSummary(schoolId, year) {
   const month = 4;  // TODO: 開始月度を指定できるように
 
   const year_start_date = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-01`;
-  const year_end_date = `${(year + 1).toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-01`;
+  const year_end_date = `${(year + 1).toString().padStart(4, '0')}-${(month - 1).toString().padStart(2, '0')}-99`;
 
   let instructors = await getInstructors(schoolId, year_start_date, year_end_date);
 
@@ -216,10 +216,9 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, y
 
           if (workHour.AdditionalCheck) {
               instructors[instructorId].WorkHours[ym].AdditionalHours += instEnd - instStart;
-          } else {
-              instructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
-              instructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.max(Math.min(close, instEnd) - Math.max(open, instStart), 0);
           }
+          instructors[instructorId].WorkHours[ym].WorkHoursWithinOpeningHours += Math.min(close, instEnd) - Math.max(open, instStart);
+          instructors[instructorId].WorkHours[ym].WorkHoursWithoutOpeningHours += instEnd - instStart - Math.max(Math.min(close, instEnd) - Math.max(open, instStart), 0);
         }
       });
     } catch (error) {
