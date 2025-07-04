@@ -24,8 +24,20 @@ exports.handler = async (event, context) => {
     return response_403
   }
 
+  // 出力ファイルのタイプを取得
+  // 設定なしは加配情報
+  const file_type = qsp.file_type;
+
   const schoolId = qsp.school_id;
   const year = parseInt(qsp.year);
+
+  // S3にアップロード
+  const signed_url = await createAdditionalSummary(schoolId, year);
+
+  return response_ok({ url: signed_url });
+}
+
+async function createAdditionalSummary(schoolId, year) {
   const month = 5;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
@@ -60,9 +72,7 @@ exports.handler = async (event, context) => {
   await createXlsxFile(additionalInstructors, month_list);
 
   // S3にアップロード
-  const signed_url = await uploadToS3(year);
-
-  return response_ok({ url: signed_url });
+  return await uploadToS3(year);
 }
 
 async function getAdditionalInstructors(after_school_id, start_date, end_date) {
