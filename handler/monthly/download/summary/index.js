@@ -64,17 +64,31 @@ async function createWorkSummary(schoolId, year) {
     month_open_hours.push(await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym));
   }
 
+  // 出力対象のデータに成形する
+  const view_data = []
+  for (const workHours of Object.values(instructors)) {
+    const tmp_data = {
+      InstructorName: workHours.InstructorName,
+      WorkHours: [
+        [], // 合計
+        [], // 開所時間内
+        [], // 開所時間率
+      ]
+    }
+
+    Object.values(workHours.WorkHours).forEach((hours, index) => {
+      tmp_data.WorkHours[0].push(hours.TotalHours);
+      tmp_data.WorkHours[1].push(hours.WorkHoursWithinOpeningHours);
+      tmp_data.WorkHours[2].push(hours.WorkHoursWithinOpeningHours / month_open_hours[index]);
+    });
+    view_data.push(tmp_data);
+  }
+
   // Excelファイルの作成
-  await createXlsxFile(instructors, month_list, month_open_hours, [
-      { offset: 0, label: '合計', data: totalHours },
-      { offset: 1, label: '加配1人目', data: additionalHours },
-      { offset: 2, label: '加配1人目以外', data: [] },
-      { offset: 3, label: '医ケア', data: [] },
-      { offset: 4, label: '開所時間外', data: workHoursWithoutOpeningHours },
-    ]);
+  await createXlsxFile(view_data, month_list, month_open_hours, ['合計', '開所時間内', '開所時間率']);
 
   // S3にアップロード
-  return await uploadToS3('additional_instructor_work_hours', '加配情報', year);
+  return await uploadToS3('work_summary', '勤務サマリ', year);
 }
 
 /**
@@ -129,22 +143,16 @@ async function createAdditionalSummary(schoolId, year) {
       ]
     }
 
-    for (const hours of Object.values(workHours.WorkHours)) {
+    Object.values(workHours.WorkHours).forEach((hours) => {
       tmp_data.WorkHours[0].push(hours.TotalHours);
       tmp_data.WorkHours[1].push(hours.AdditionalHours);
       tmp_data.WorkHours[4].push(hours.WorkHoursWithoutOpeningHours);
-    }
+    });
     view_data.push(tmp_data);
   }
 
   // Excelファイルの作成
-  await createXlsxFile(view_data, month_list, month_open_hours, [
-    { offset: 0, label: '合計' },
-    { offset: 1, label: '加配1人目' },
-    { offset: 2, label: '加配1人目以外' },
-    { offset: 3, label: '医ケア' },
-    { offset: 4, label: '開所時間外' },
-  ]);
+  await createXlsxFile(view_data, month_list, month_open_hours, ['合計', '加配1人目', '加配1人目以外', '医ケア', '開所時間外']);
 
   // S3にアップロード
   return await uploadToS3('additional_instructor_work_hours', '加配情報', year);
@@ -237,7 +245,7 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
     inst_data.WorkHours.forEach((data, index) => {
-      sheet.cell(`B${base_row}`).value(row_labels[index].label);
+      sheet.cell(`B${base_row}`).value(row_labels[index]);
       data.forEach((hours, monthIndex) => {
         sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
       });
