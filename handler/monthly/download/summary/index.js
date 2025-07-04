@@ -57,7 +57,7 @@ async function createWorkSummary(schoolId, year) {
       calcYear += 1;
       calcMonth -= 12;
     }
-    month_list.push((calcMonth == 1 ? 12 : calcMonth - 1));
+    month_list.push(calcMonth);
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
 
@@ -79,7 +79,7 @@ async function createWorkSummary(schoolId, year) {
     Object.values(workHours.WorkHours).forEach((hours, index) => {
       tmp_data.WorkHours[0].push(hours.TotalHours);
       tmp_data.WorkHours[1].push(hours.WorkHoursWithinOpeningHours);
-      tmp_data.WorkHours[2].push(hours.WorkHoursWithinOpeningHours / month_open_hours[index]);
+      tmp_data.WorkHours[2].push(month_open_hours[index] > 0 ? Math.round((hours.WorkHoursWithinOpeningHours / month_open_hours[index]) * 1000) / 1000 : '');
     });
     view_data.push(tmp_data);
   }
