@@ -55,7 +55,7 @@ exports.handler = async (event, context) => {
             false,                                                                                      // 加配対象職員配置
             0,                                                                                          // 加配対象時間数
         ]
-        // 加配退所職員チェック
+        // 加配対象職員チェック
         if(dt_str in daily_dict){
             daily_dict[dt_str].Details.InstructorWorkHours.forEach((ins) => {
                 if(ins.AdditionalCheck){
