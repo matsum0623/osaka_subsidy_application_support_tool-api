@@ -236,9 +236,9 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   base_row = 3
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
-    inst_data.WorkHours.forEach((data) => {
+    inst_data.WorkHours.forEach((data, index) => {
+      sheet.cell(`B${base_row}`).value(row_labels[index].label);
       data.forEach((hours, monthIndex) => {
-        sheet.cell(`B${base_row}`).value(row_labels[monthIndex].label);
         sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
       });
       sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(convert_int_to_time(data.reduce((acc, val) => acc + val, 0)));
