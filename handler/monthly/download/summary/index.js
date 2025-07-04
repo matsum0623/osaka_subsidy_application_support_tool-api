@@ -230,6 +230,7 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   month_open_hours.forEach((hours, index) => {
     sheet.cell(`${DATA_ROWS[index]}2`).value(convert_int_to_time(hours));
   });
+  sheet.cell(`${DATA_ROWS[DATA_ROWS.length - 1]}2`).value(convert_int_to_time(month_open_hours.reduce((acc, val) => acc + val, 0)));
 
   // 指導員ごとの情報
   base_row = 3
@@ -237,10 +238,10 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
     inst_data.WorkHours.forEach((data) => {
       data.forEach((hours, monthIndex) => {
+        sheet.cell(`B${base_row}`).value(row_labels[monthIndex].label);
         sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(convert_int_to_time(hours));
       });
-      const sum = data.reduce((acc, val) => acc + val, 0);
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(convert_int_to_time(sum));
+      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(convert_int_to_time(data.reduce((acc, val) => acc + val, 0)));
       base_row++;
     });
   })
