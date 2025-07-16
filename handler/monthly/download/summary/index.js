@@ -10,7 +10,7 @@ const { convert_time_to_int, convert_int_to_time } = require('Utils')
 const XlsxPopulate = require('xlsx-populate');
 
 const SHEET_NAME = '加配情報';
-const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
 const TMP_FILE_NAME = `/tmp/Output.xlsx`;
 
 exports.handler = async (event, context) => {
@@ -81,14 +81,18 @@ async function createWorkSummary(schoolId, year) {
       tmp_data.WorkHours[1].push(hours.WorkHoursWithinOpeningHours);
       tmp_data.WorkHours[2].push(month_open_hours[index] > 0 ? Math.round((hours.WorkHoursWithinOpeningHours / month_open_hours[index]) * 1000) / 1000 : '');
     });
+    // 各配列に合計データを計算して追加
+    tmp_data.WorkHours[0].push(tmp_data.WorkHours[0].reduce((acc, val) => acc + val, 0));
+    tmp_data.WorkHours[1].push(tmp_data.WorkHours[1].reduce((acc, val) => acc + val, 0));
+    tmp_data.WorkHours[2].push(tmp_data.WorkHours[0][tmp_data.WorkHours[0].length - 1] > 0 ? tmp_data.WorkHours[1][tmp_data.WorkHours[1].length - 1] / tmp_data.WorkHours[0][tmp_data.WorkHours[0].length - 1] : '');
     view_data.push(tmp_data);
   }
 
   // Excelファイルの作成
   await createXlsxFile(view_data, month_list, month_open_hours, [
-    { convert: convert_int_to_time, label: '合計' },
-    { convert: convert_int_to_time, label: '開所時間内' },
-    { label: '開所時間率' },
+    { convert: convert_int_to_time, label: '合計' , style: "time"},
+    { convert: convert_int_to_time, label: '開所時間内', style: "time" },
+    { label: '開所時間率', style: "percent" },
   ]);
 
   // S3にアップロード
@@ -141,8 +145,8 @@ async function createAdditionalSummary(schoolId, year) {
       WorkHours: [
         [], // 合計
         [], // 加配1人目
-        [0,0,0,0,0,0,0,0,0,0,0,0], // 加配1人目以外
-        [0,0,0,0,0,0,0,0,0,0,0,0], // 医ケア
+        [0,0,0,0,0,0,0,0,0,0,0,0,0], // 加配1人目以外
+        [0,0,0,0,0,0,0,0,0,0,0,0,0], // 医ケア
         [], // 開所時間外
       ]
     }
@@ -152,16 +156,20 @@ async function createAdditionalSummary(schoolId, year) {
       tmp_data.WorkHours[1].push(hours.AdditionalHours);
       tmp_data.WorkHours[4].push(hours.WorkHoursWithoutOpeningHours);
     });
+    // 各配列に合計データを計算して追加
+    tmp_data.WorkHours[0].push(tmp_data.WorkHours[0].reduce((acc, val) => acc + val, 0));
+    tmp_data.WorkHours[1].push(tmp_data.WorkHours[1].reduce((acc, val) => acc + val, 0));
+    tmp_data.WorkHours[4].push(tmp_data.WorkHours[4].reduce((acc, val) => acc + val, 0));
     view_data.push(tmp_data);
   }
 
   // Excelファイルの作成
   await createXlsxFile(view_data, month_list, month_open_hours, [
-    { convert: convert_int_to_time, label: '合計'},
-    { convert: convert_int_to_time, label: '加配1人目'},
-    { convert: convert_int_to_time, label: '加配1人目以外'},
-    { convert: convert_int_to_time, label: '医ケア'},
-    { convert: convert_int_to_time, label: '開所時間外'},
+    { convert: convert_int_to_time, label: '合計', style: "time"},
+    { convert: convert_int_to_time, label: '加配1人目', style: "time"},
+    { convert: convert_int_to_time, label: '加配1人目以外', style: "time"},
+    { convert: convert_int_to_time, label: '医ケア', style: "time"},
+    { convert: convert_int_to_time, label: '開所時間外', style: "time"},
   ]);
 
   // S3にアップロード
@@ -254,12 +262,22 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
     inst_data.WorkHours.forEach((data, index) => {
-      sheet.cell(`B${base_row}`).value(row_labels[index].label);
+      const row_settings = row_labels[index];
+      sheet.cell(`B${base_row}`).value(row_settings.label);
       data.forEach((hours, monthIndex) => {
-        sheet.cell(`${DATA_ROWS[monthIndex]}${base_row}`).value(row_labels[index].convert ? row_labels[index].convert(hours): hours);
+        const cell_name = `${DATA_ROWS[monthIndex]}${base_row}`;
+        sheet.cell(cell_name).value(row_settings.convert ? row_settings.convert(hours): hours);
+        switch (row_settings.style) {
+          case "time":
+            sheet.cell(cell_name).style("numberFormat", "[h]:mm")
+            break;
+            case "percent":
+            sheet.cell(cell_name).style("numberFormat", "0.0%")
+            break;
+          default:
+            break;
+        }
       });
-      const sum = data.reduce((acc, val) => acc + val, 0)
-      sheet.cell(`${DATA_ROWS[data.length]}${base_row}`).value(row_labels[index].convert ? row_labels[index].convert(sum) : sum);
       base_row++;
     });
   })
