@@ -75,6 +75,7 @@ async function createWorkSummary(schoolId, year) {
       WorkHours: [
         [], // 合計
         [], // 開所時間内
+        [], // 開所時間外
         [], // 開所時間率
       ]
     }
@@ -82,20 +83,23 @@ async function createWorkSummary(schoolId, year) {
     Object.values(workHours.WorkHours).forEach((hours, index) => {
       tmp_data.WorkHours[0].push(hours.TotalHours);
       tmp_data.WorkHours[1].push(hours.WorkHoursWithinOpeningHours);
-      tmp_data.WorkHours[2].push(month_open_hours[index] > 0 ? Math.round((hours.WorkHoursWithinOpeningHours / month_open_hours[index]) * 1000) / 1000 : '');
+      tmp_data.WorkHours[2].push(hours.WorkHoursWithoutOpeningHours);
+      tmp_data.WorkHours[3].push(month_open_hours[index] > 0 ? Math.round((hours.WorkHoursWithinOpeningHours / month_open_hours[index]) * 1000) / 1000 : '');
     });
     // 各配列に合計データを計算して追加
     tmp_data.WorkHours[0].push(tmp_data.WorkHours[0].reduce((acc, val) => acc + val, 0));
     tmp_data.WorkHours[1].push(tmp_data.WorkHours[1].reduce((acc, val) => acc + val, 0));
-    tmp_data.WorkHours[2].push(month_open_hours[month_open_hours.length - 1] > 0 ? tmp_data.WorkHours[1][tmp_data.WorkHours[1].length - 1] / month_open_hours[month_open_hours.length - 1] : '');
+    tmp_data.WorkHours[2].push(tmp_data.WorkHours[2].reduce((acc, val) => acc + val, 0));
+    tmp_data.WorkHours[3].push(month_open_hours[month_open_hours.length - 1] > 0 ? tmp_data.WorkHours[1][tmp_data.WorkHours[1].length - 1] / month_open_hours[month_open_hours.length - 1] : '');
     view_data.push(tmp_data);
   }
 
   // Excelファイルの作成
   await createXlsxFile(view_data, month_list, month_open_hours, [
-    { convert: convert_int_to_time, label: '合計' , style: "time"},
-    { convert: convert_int_to_time, label: '開所時間内', style: "time" },
-    { label: '開所時間率', style: "percent" },
+    { convert: convert_int_to_time, label: '合計' , style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
+    { convert: convert_int_to_time, label: '開所時間内', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"} },
+    { convert: convert_int_to_time, label: '開所時間外', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"} },
+    { label: '開所時間率', style: {numberFormat: "0.0%", horizontalAlignment: "right", bold: true} },
   ]);
 
   // S3にアップロード
@@ -171,11 +175,11 @@ async function createAdditionalSummary(schoolId, year) {
 
   // Excelファイルの作成
   await createXlsxFile(view_data, month_list, month_open_hours, [
-    { convert: convert_int_to_time, label: '合計', style: "time"},
-    { convert: convert_int_to_time, label: '加配1人目', style: "time"},
-    { convert: convert_int_to_time, label: '加配1人目以外', style: "time"},
-    { convert: convert_int_to_time, label: '医ケア', style: "time"},
-    { convert: convert_int_to_time, label: '開所時間外', style: "time"},
+    { convert: convert_int_to_time, label: '合計', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
+    { convert: convert_int_to_time, label: '加配1人目', style: {numberFormat: "[h]:mm", horizontalAlignment: "right", bold: true}},
+    { convert: convert_int_to_time, label: '加配1人目以外', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
+    { convert: convert_int_to_time, label: '医ケア', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
+    { convert: convert_int_to_time, label: '開所時間外', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
   ]);
 
   // S3にアップロード
@@ -253,6 +257,10 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   sheet.cell('A1').value('指導員名');
   DATA_ROWS.forEach((col, index) => {
     sheet.cell(`${col}1`).value(`${month_list[index]}月`);
+    sheet.style(`${col}1`, {
+      bold: true,
+      horizontalAlignment: "center",
+    });
   });
 
   // 月次開所時間合計
@@ -271,16 +279,7 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
       data.forEach((hours, monthIndex) => {
         const cell_name = `${DATA_ROWS[monthIndex]}${base_row}`;
         sheet.cell(cell_name).value(row_settings.convert ? row_settings.convert(hours): hours);
-        switch (row_settings.style) {
-          case "time":
-            sheet.cell(cell_name).style("numberFormat", "[h]:mm")
-            break;
-            case "percent":
-            sheet.cell(cell_name).style("numberFormat", "0.0%")
-            break;
-          default:
-            break;
-        }
+        sheet.cell(cell_name).style(row_settings.style);
       });
       base_row++;
     });
