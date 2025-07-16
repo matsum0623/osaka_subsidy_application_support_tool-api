@@ -63,6 +63,9 @@ async function createWorkSummary(schoolId, year) {
 
     month_open_hours.push(await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym));
   }
+  // 月次開所時間合計を追加
+  month_list.push('合計');
+  month_open_hours.push(month_open_hours.reduce((acc, val) => acc + val, 0));
 
   // 出力対象のデータに成形する
   const view_data = []
@@ -84,7 +87,7 @@ async function createWorkSummary(schoolId, year) {
     // 各配列に合計データを計算して追加
     tmp_data.WorkHours[0].push(tmp_data.WorkHours[0].reduce((acc, val) => acc + val, 0));
     tmp_data.WorkHours[1].push(tmp_data.WorkHours[1].reduce((acc, val) => acc + val, 0));
-    tmp_data.WorkHours[2].push(tmp_data.WorkHours[0][tmp_data.WorkHours[0].length - 1] > 0 ? tmp_data.WorkHours[1][tmp_data.WorkHours[1].length - 1] / tmp_data.WorkHours[0][tmp_data.WorkHours[0].length - 1] : '');
+    tmp_data.WorkHours[2].push(month_open_hours[month_open_hours.length - 1] > 0 ? tmp_data.WorkHours[1][tmp_data.WorkHours[1].length - 1] / month_open_hours[month_open_hours.length - 1] : '');
     view_data.push(tmp_data);
   }
 
@@ -136,6 +139,9 @@ async function createAdditionalSummary(schoolId, year) {
 
     month_open_hours.push(await calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym));
   }
+  // 月次開所時間合計を追加
+  month_list.push('合計');
+  month_open_hours.push(month_open_hours.reduce((acc, val) => acc + val, 0));
 
   // 出力対象のデータに成形する
   const view_data = []
@@ -248,14 +254,12 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   DATA_ROWS.forEach((col, index) => {
     sheet.cell(`${col}1`).value(`${month_list[index]}月`);
   });
-  sheet.cell(`${DATA_ROWS[DATA_ROWS.length - 1]}1`).value('合計');
 
   // 月次開所時間合計
   sheet.cell(`A2`).value('月次開所時間合計');
   month_open_hours.forEach((hours, index) => {
     sheet.cell(`${DATA_ROWS[index]}2`).value(convert_int_to_time(hours));
   });
-  sheet.cell(`${DATA_ROWS[DATA_ROWS.length - 1]}2`).value(convert_int_to_time(month_open_hours.reduce((acc, val) => acc + val, 0)));
 
   // 指導員ごとの情報
   base_row = 3
