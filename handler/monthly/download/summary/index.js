@@ -10,7 +10,7 @@ const { convert_time_to_int, convert_int_to_time } = require('Utils')
 const XlsxPopulate = require('xlsx-populate');
 
 const SHEET_NAME = '加配情報';
-const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+const DATA_ROWS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 const TMP_FILE_NAME = `/tmp/Output.xlsx`;
 
 exports.handler = async (event, context) => {
