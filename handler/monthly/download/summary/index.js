@@ -252,6 +252,8 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   const book = await XlsxPopulate.fromBlankAsync();
   book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
+  sheet.column('A').width(11);
+  sheet.column('B').width(13);
 
   // ヘッダーの設定
   sheet.cell('A1').value('指導員名');
@@ -267,6 +269,9 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   sheet.cell(`A2`).value('月次開所時間合計');
   month_open_hours.forEach((hours, index) => {
     sheet.cell(`${DATA_ROWS[index]}2`).value(convert_int_to_time(hours));
+    sheet.cell(`${DATA_ROWS[index]}2`).style({
+      horizontalAlignment: "right",
+    });
   });
 
   // 指導員ごとの情報
