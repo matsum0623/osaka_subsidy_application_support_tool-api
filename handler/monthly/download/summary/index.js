@@ -257,7 +257,7 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   sheet.cell('A1').value('指導員名');
   DATA_ROWS.forEach((col, index) => {
     sheet.cell(`${col}1`).value(`${month_list[index]}月`);
-    sheet.style(`${col}1`, {
+    sheet.cell(`${col}1`).style({
       bold: true,
       horizontalAlignment: "center",
     });
