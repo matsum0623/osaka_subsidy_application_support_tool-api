@@ -14,7 +14,7 @@ Parameters:
 Globals:
   Function:
     Handler: index.handler
-    Runtime: nodejs22.x
+    Runtime: nodejs24.x
     Timeout: 30
     MemorySize: 256
     Layers:
