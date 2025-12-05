@@ -69,7 +69,7 @@ async function createWorkSummary(schoolId, year) {
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
 
-    const [month_open_hours_tmp, month_open_days_tmp] = await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym);
+    const [month_open_hours_tmp, month_open_days_tmp] = await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym, 1);
     month_open_hours.push(month_open_hours_tmp);
     month_open_days[0].push(month_open_days_tmp[0]);
     month_open_days[1].push(month_open_days_tmp[1]);
@@ -247,7 +247,7 @@ async function getInstructors(after_school_id, start_date, end_date, additional 
   return res_instructors;
 }
 
-async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym) {
+async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym, sum_hour_type = 0) {
   const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
 
   for (const inst in instructors) {
@@ -273,7 +273,7 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, y
     try {
       const open = convert_time_to_int(item.OpenTime.start);
       const close = convert_time_to_int(item.OpenTime.end);
-      open_hours_sum += close - open;
+      open_hours_sum += sum_hour_type == 1 ? Math.min(close - open, 5.5) : close - open;  // TODO: 平均開所時間を設定できるようにする
       // 開所日の集計
       if ( close - open > 0 ) {
         if (item.OpenType == '9') {
