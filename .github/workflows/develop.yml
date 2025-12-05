@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: aws-actions/setup-sam@v2
         with:
-          version: '3.12'
+          version: '1.120.0'
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
