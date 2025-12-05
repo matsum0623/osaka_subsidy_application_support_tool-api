@@ -49,6 +49,14 @@ async function createWorkSummary(schoolId, year) {
 
   const month_list = [];
   const month_open_hours = [];
+  const month_open_days = [
+    [], // 月～金曜日
+    [], // 土曜日
+    [], // 長期休暇期間
+    [], // 土曜日（長期休暇期間）
+    [], // 日曜日・祝日(日曜加算含む)
+    [], // 合計
+  ];
   for (let i = 0; i < 12; i++) {
     let calcMonth = month + i;
     let calcYear = year;
@@ -61,11 +69,24 @@ async function createWorkSummary(schoolId, year) {
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
 
-    month_open_hours.push(await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym));
+    const [month_open_hours_tmp, month_open_days_tmp] = await calcMonthWorkSummary(schoolId, `${ym}-01`, `${ym}-99`, instructors, ym, 1);
+    month_open_hours.push(month_open_hours_tmp);
+    month_open_days[0].push(month_open_days_tmp[0]);
+    month_open_days[1].push(month_open_days_tmp[1]);
+    month_open_days[2].push(month_open_days_tmp[2]);
+    month_open_days[3].push(month_open_days_tmp[3]);
+    month_open_days[4].push(month_open_days_tmp[4]);
+    month_open_days[5].push(month_open_days_tmp[5]);
   }
   // 月次開所時間合計を追加
   month_list.push('合計');
   month_open_hours.push(month_open_hours.reduce((acc, val) => acc + val, 0));
+  month_open_days[0].push(month_open_days[0].reduce((acc, val) => acc + val, 0));
+  month_open_days[1].push(month_open_days[1].reduce((acc, val) => acc + val, 0));
+  month_open_days[2].push(month_open_days[2].reduce((acc, val) => acc + val, 0));
+  month_open_days[3].push(month_open_days[3].reduce((acc, val) => acc + val, 0));
+  month_open_days[4].push(month_open_days[4].reduce((acc, val) => acc + val, 0));
+  month_open_days[5].push(month_open_days[5].reduce((acc, val) => acc + val, 0));
 
   // 出力対象のデータに成形する
   const view_data = []
@@ -95,7 +116,7 @@ async function createWorkSummary(schoolId, year) {
   }
 
   // Excelファイルの作成
-  await createXlsxFile(view_data, month_list, month_open_hours, [
+  await createXlsxFile(view_data, month_list, month_open_days, month_open_hours, [
     { convert: convert_int_to_time, label: '合計' , style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
     { convert: convert_int_to_time, label: '開所時間内', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"} },
     { convert: convert_int_to_time, label: '開所時間外', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"} },
@@ -124,6 +145,15 @@ async function createAdditionalSummary(schoolId, year) {
 
   const month_list = [];
   const month_open_hours = [];
+  const month_open_days = [
+    [], // 月～金曜日
+    [], // 土曜日
+    [], // 長期休暇期間
+    [], // 土曜日（長期休暇期間）
+    [], // 日曜日・祝日(日曜加算含む)
+    [], // 合計
+  ];
+
   for (let i = 0; i < 12; i++) {
     let calcMonth = month + i;
     let calcYear = year;
@@ -141,11 +171,24 @@ async function createAdditionalSummary(schoolId, year) {
     const startDate = `${prevYear.toString().padStart(4, '0')}-${prevMonth.toString().padStart(2, '0')}-${(closingDate + 1).toString().padStart(2, '0')}`;
     const endDate = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}-${closingDate.toString().padStart(2, '0')}`;
 
-    month_open_hours.push(await calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym));
+    const [month_open_hours_tmp, month_open_days_tmp] = await calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym);
+    month_open_hours.push(month_open_hours_tmp);
+    month_open_days[0].push(month_open_days_tmp[0]);
+    month_open_days[1].push(month_open_days_tmp[1]);
+    month_open_days[2].push(month_open_days_tmp[2]);
+    month_open_days[3].push(month_open_days_tmp[3]);
+    month_open_days[4].push(month_open_days_tmp[4]);
+    month_open_days[5].push(month_open_days_tmp[5]);
   }
   // 月次開所時間合計を追加
   month_list.push('合計');
   month_open_hours.push(month_open_hours.reduce((acc, val) => acc + val, 0));
+  month_open_days[0].push(month_open_days[0].reduce((acc, val) => acc + val, 0));
+  month_open_days[1].push(month_open_days[1].reduce((acc, val) => acc + val, 0));
+  month_open_days[2].push(month_open_days[2].reduce((acc, val) => acc + val, 0));
+  month_open_days[3].push(month_open_days[3].reduce((acc, val) => acc + val, 0));
+  month_open_days[4].push(month_open_days[4].reduce((acc, val) => acc + val, 0));
+  month_open_days[5].push(month_open_days[5].reduce((acc, val) => acc + val, 0));
 
   // 出力対象のデータに成形する
   const view_data = []
@@ -174,7 +217,7 @@ async function createAdditionalSummary(schoolId, year) {
   }
 
   // Excelファイルの作成
-  await createXlsxFile(view_data, month_list, month_open_hours, [
+  await createXlsxFile(view_data, month_list, month_open_days, month_open_hours, [
     { convert: convert_int_to_time, label: '合計', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
     { convert: convert_int_to_time, label: '加配1人目', style: {numberFormat: "[h]:mm", horizontalAlignment: "right", bold: true}},
     { convert: convert_int_to_time, label: '加配1人目以外', style: {numberFormat: "[h]:mm", horizontalAlignment: "right"}},
@@ -204,7 +247,7 @@ async function getInstructors(after_school_id, start_date, end_date, additional 
   return res_instructors;
 }
 
-async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym) {
+async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, ym, sum_hour_type = 0) {
   const daily_data = await daily.get_list_between(schoolId, startDate, endDate);
 
   for (const inst in instructors) {
@@ -217,12 +260,30 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, y
   }
 
   let open_hours_sum = 0;
+  let open_days_sum = {
+    0: 0, // 月～金曜日
+    1: 0, // 土曜日
+    2: 0, // 長期休暇期間
+    3: 0, // 土曜日（長期休暇期間）
+    4: 0, // 日曜日・祝日(日曜加算含む)
+    5: 0, // 合計
+  }
 
   daily_data.forEach(item => {
     try {
       const open = convert_time_to_int(item.OpenTime.start);
       const close = convert_time_to_int(item.OpenTime.end);
-      open_hours_sum += close - open;
+      open_hours_sum += sum_hour_type == 1 ? Math.min(close - open, 5.5) : close - open;  // TODO: 平均開所時間を設定できるようにする
+      // 開所日の集計
+      if ( close - open > 0 ) {
+        if (item.OpenType == '9') {
+          open_days_sum[4] += 1;
+        } else {
+          open_days_sum[item.OpenType] += 1;
+        }
+        open_days_sum[5] += 1;
+      }
+
 
       item.Details.InstructorWorkHours.forEach(workHour => {
         const instructorId = workHour.InstructorId;
@@ -245,10 +306,10 @@ async function calcMonthWorkSummary(schoolId, startDate, endDate, instructors, y
     }
   });
 
-  return open_hours_sum;
+  return [open_hours_sum, open_days_sum];
 }
 
-async function createXlsxFile(view_data, month_list, month_open_hours, row_labels) {
+async function createXlsxFile(view_data, month_list, month_open_days, month_open_hours, row_labels) {
   const book = await XlsxPopulate.fromBlankAsync();
   book.sheet(0).name(SHEET_NAME);
   const sheet = book.sheet(0);
@@ -256,26 +317,50 @@ async function createXlsxFile(view_data, month_list, month_open_hours, row_label
   sheet.column('B').width(13);
 
   // ヘッダーの設定
-  sheet.cell('A1').value('指導員名');
+  row = 1
+  sheet.cell(`A${row}`).value('指導員名');
   DATA_ROWS.forEach((col, index) => {
-    sheet.cell(`${col}1`).value(`${month_list[index]}月`);
-    sheet.cell(`${col}1`).style({
+    sheet.cell(`${col}${row}`).value(`${month_list[index]}月`);
+    sheet.cell(`${col}${row}`).style({
       bold: true,
       horizontalAlignment: "center",
     });
   });
 
+  // 開所日数
+  row = 2
+  sheet.cell(`A${row}`).value('開所日数');
+
+  row_title = [
+    [2, '月～金曜日'],
+    [3, '土曜日'],
+    [4, '長期休暇期間'],
+    [5, '土曜日'],
+    [6, '日曜日・祝日'],
+    [7, '合計'],
+  ]
+  month_open_days.forEach((row_data, index1) => {
+    sheet.cell(`B${row_title[index1][0]}`).value(row_title[index1][1]);
+    row_data.forEach((hours, index2) => {
+      sheet.cell(`${DATA_ROWS[index2]}${row_title[index1][0]}`).value(hours);
+      sheet.cell(`${DATA_ROWS[index2]}${row_title[index1][0]}`).style({
+        horizontalAlignment: "right",
+      });
+    });
+  });
+
   // 月次開所時間合計
-  sheet.cell(`A2`).value('月次開所時間合計');
+  row = 8
+  sheet.cell(`A${row}`).value('月次開所時間合計');
   month_open_hours.forEach((hours, index) => {
-    sheet.cell(`${DATA_ROWS[index]}2`).value(convert_int_to_time(hours));
-    sheet.cell(`${DATA_ROWS[index]}2`).style({
+    sheet.cell(`${DATA_ROWS[index]}${row}`).value(convert_int_to_time(hours));
+    sheet.cell(`${DATA_ROWS[index]}${row}`).style({
       horizontalAlignment: "right",
     });
   });
 
   // 指導員ごとの情報
-  base_row = 3
+  base_row = 9
   view_data.forEach((inst_data) => {
     sheet.cell(`A${base_row}`).value(inst_data.InstructorName);
     inst_data.WorkHours.forEach((data, index) => {
