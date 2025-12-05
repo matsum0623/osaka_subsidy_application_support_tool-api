@@ -339,11 +339,11 @@ async function createXlsxFile(view_data, month_list, month_open_days, month_open
     [6, '日曜日・祝日'],
     [7, '合計'],
   ]
-  month_open_days.forEach((row_data, index) => {
-    sheet.cell(`B${row_title[index][0]}`).value(row_title[index][1]);
-    row_data.forEach((hours, index) => {
-      sheet.cell(`${DATA_ROWS[index]}${row_title[index][0]}`).value(convert_int_to_time(hours));
-      sheet.cell(`${DATA_ROWS[index]}${row_title[index][0]}`).style({
+  month_open_days.forEach((row_data, index1) => {
+    sheet.cell(`B${row_title[index1][0]}`).value(row_title[index1][1]);
+    row_data.forEach((hours, index2) => {
+      sheet.cell(`${DATA_ROWS[index2]}${row_title[index1][0]}`).value(convert_int_to_time(hours));
+      sheet.cell(`${DATA_ROWS[index2]}${row_title[index1][0]}`).style({
         horizontalAlignment: "right",
       });
     });
