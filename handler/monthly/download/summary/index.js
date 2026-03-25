@@ -134,7 +134,7 @@ async function createWorkSummary(schoolId, year) {
  * @returns {string} S3の署名付きURL
  */
 async function createAdditionalSummary(schoolId, year) {
-  const month = 5;  // TODO: 開始月度を指定できるように
+  const month = 4;  // TODO: 開始月度を指定できるように
   const closingDate = 15; // TODO: 締め日の設定ができるようにする。学童設定あたりに保持しておく
 
   // 開始日と終了日作成。開始日は年度＋月＋締め日翌日、終了日は翌年度＋前月＋締め日
@@ -162,7 +162,7 @@ async function createAdditionalSummary(schoolId, year) {
       calcYear += 1;
       calcMonth -= 12;
     }
-    month_list.push((calcMonth == 1 ? 12 : calcMonth - 1));
+    month_list.push(calcMonth);
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
     const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
