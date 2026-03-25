@@ -162,7 +162,7 @@ async function createAdditionalSummary(schoolId, year) {
       calcYear += 1;
       calcMonth -= 12;
     }
-    month_list.push((calcMonth == 1 ? 12 : calcMonth - 1));
+    month_list.push(calcMonth);
 
     const ym = `${calcYear.toString().padStart(4, '0')}-${calcMonth.toString().padStart(2, '0')}`;
     const prevMonth = calcMonth === 1 ? 12 : calcMonth - 1;
